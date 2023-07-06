@@ -15,6 +15,8 @@ For å slette videoer: http://\[camIp\]:8080/gopro/media/delete/file?path=100GOP
 
 !MBOOT="mVr4p50fL0te0dR60d1b1wAg0v0q0dVoV0B4D2C0SW0!S"!MWAKE=2!MTUSB=1
 
+!MBOOT="mVr4p50fSte0hS0dR30d1b0!S"!MWAKE=2!MTUSB=1
+
 ## Miljø
 
 Python versjon testet: `Python 3.11`, `Python 3.9`  
