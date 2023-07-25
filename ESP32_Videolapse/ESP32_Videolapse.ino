@@ -3,7 +3,6 @@
 #define uS_TO_S_FACTOR 1000000  /* Conversion factor for micro seconds to seconds */
 
 #define relay_pin1 13
-#define relay_pin2 15
 
 #define RX1 9
 #define TX1 7
@@ -16,7 +15,6 @@ CRGB leds[NUM_LEDS];
 void setup() {
   // Start power to camera system
   pinMode(relay_pin1, OUTPUT);
-  pinMode(relay_pin2, OUTPUT);
 
   // Initiate RGB Led
   FastLED.addLeds<WS2812, PIN_LED, GRB>(leds, NUM_LEDS);
@@ -27,7 +25,6 @@ void setup() {
   FastLED.show();
 
   digitalWrite(relay_pin1, HIGH);
-  digitalWrite(relay_pin2, HIGH);
 
   Serial1.println("Hello i exist");
 
@@ -56,7 +53,6 @@ void setup() {
   FastLED.show();
 
   digitalWrite(relay_pin1, LOW);
-  digitalWrite(relay_pin2, LOW);
 
   esp_sleep_enable_timer_wakeup(timeout*uS_TO_S_FACTOR);
   esp_deep_sleep_start();

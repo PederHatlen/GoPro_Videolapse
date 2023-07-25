@@ -13,16 +13,15 @@ fileFormatOut = ".mp4"
 
 clip_length = 30
 
-tz = datetime.now(timezone.utc).astimezone().tzinfo
-
 camIP = "172.24.151.51"
 microController_serial = "/dev/ttyS0"
 
 latitude = 62.0075084
 longitude = 12.1801452
 
-events = {}
+tz = datetime.now(timezone.utc).astimezone().tzinfo
 
+events = {}
 
 def find(timeout, camIP):
     expireTime = datetime.now(tz) + timedelta(seconds=timeout)
@@ -31,21 +30,11 @@ def find(timeout, camIP):
             requests.get(f"http://{camIP}:8080/gopro/camera/keep_alive", timeout=1)
             print(f"Found {camIP}")
             return True
-        except requests.exceptions.ConnectTimeout:
+        except:
             print(f"Camera {camIP} was not found")
         time.sleep(1)
     print("Could not find gopro in time")
     return False
-
-# def get_recording_completed(camIP):
-#     try:
-#         status = requests.get(f"http://{camIP}:8080/gopro/camera/state").json()["status"]
-#         if not status[10]: return 0
-
-#         if status[13] > 62: return 60
-#         else: return (65 - status[13])
-#     except requests.exceptions.ConnectTimeout:
-#         return 0
 
 def get_dropbox_accesskey():
     payload = 'refresh_token=[refresh_token]&grant_type=refresh_token'
@@ -110,11 +99,11 @@ def event_times_local(lat, long):
     obs = Observer(lat, long)
 
     events = [
-        {"type":"set", "time":sun.sunset(obs, now - day, tz)},
-        {"type":"rise", "time":sun.sunrise(obs, now, tz)},
-        {"type":"noon", "time":sun.noon(obs, now, tz)},
-        {"type":"set", "time":sun.sunset(obs, now, tz)},
-        {"type":"rise", "time":sun.sunrise(obs, now + day, tz)}
+        {"type":"Set", "time":sun.sunset(obs, now - day, tz)},
+        {"type":"Rise", "time":sun.sunrise(obs, now, tz)},
+        {"type":"Noon", "time":sun.noon(obs, now, tz)},
+        {"type":"Set", "time":sun.sunset(obs, now, tz)},
+        {"type":"Rise", "time":sun.sunrise(obs, now + day, tz)}
     ]
 
     last = {}
@@ -123,6 +112,10 @@ def event_times_local(lat, long):
         else: last = e
 
     return False
+
+def event_times_fake(lat, long):
+    now = datetime.now(tz)
+    return {"last":{"type":"Test", "time":now-timedelta(seconds=80)}, "next":{"type":"Test", "time":now+timedelta(seconds=80)}}
 
 def esp32_shutdown(secondsUntillWakeup):
     # Connecting to esp32
@@ -139,16 +132,20 @@ def esp32_shutdown(secondsUntillWakeup):
 def main():
     global events
 
-    now = datetime.now(tz)
+    ser = serial.Serial(microController_serial, 9600)
+
+    ser.write(b"Booted")
 
     # split into if the camera is availeable or not
-    if not find(60, camIP):
+    if not find(30, camIP):
         print("cam was not found :(")
         events = event_times_local(latitude, longitude)
+        if events["last"]["time"] > (datetime.now(tz)-timedelta(minutes=10)):
+            esp32_shutdown(10)
     else:
         # Sleep untill clip is done recording
         try:
-            sleeptime = ((clip_length + 10) - (datetime.now(tz) - now).total_seconds())
+            sleeptime = (clip_length - 20)
             if sleeptime < 0: sleeptime = 0
             print(f"Sleeping for {sleeptime} seconds")
             time.sleep(sleeptime)
@@ -169,17 +166,17 @@ def main():
 
         try:
             print("Trying to upload to dropbox")
-            stream_dropbox(clipLink, f"{datetime.strftime(datetime.now(tz), '%y-%m-%d_%H-%M-%S')}_Sun{events['last']['type']}.mp4")
+            stream_dropbox(clipLink, f"{datetime.strftime(now, '%y-%m-%d_%H-%M-%S')}_Sun{events['last']['type']}.mp4")
             delete_clip(camIP, clipName)
             uploadTime = (datetime.now(tz)-now).total_seconds()
             print(f"Uploading took {uploadTime//60} minutes and {round(uploadTime%60)} seconds")
         except Exception as E:
             print("something went wrong while uploading/deleting", E)
     
-    secondsUntillWakeup = (events["next"]["time"] - datetime.now(tz)).total_seconds() - (60/2)
-    print(f"Minutes untill next wakeup: {secondsUntillWakeup//60}")
+    secondsUntillWakeup = (events["next"]["time"] - datetime.now(tz)).total_seconds() - (clip_length/2)
+    print(f"Seconds untill next wakeup: {secondsUntillWakeup}")
 
-    esp32_shutdown(secondsUntillWakeup)
+    esp32_shutdown(round(secondsUntillWakeup))
     
 
 
@@ -190,12 +187,9 @@ if __name__ == "__main__":
         print("Error occured: ", E)
     
     # If error, wait 1 minute and try again
-    # while True:
-    #     time.sleep(5)
-    #     try:
-    #         if events != {}:
-    #             esp32_shutdown((events["next"]["time"] - datetime.now(tz)).total_seconds() - (60/2))
-    #         else:
-    #             esp32_shutdown(60)
-    #     except Exception as E:
-    #         print(f"Error: {E}")
+    while True:
+        time.sleep(5)
+        try:
+            esp32_shutdown(10)
+        except Exception as E:
+            print(f"Error: {E}")
