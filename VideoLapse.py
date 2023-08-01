@@ -21,14 +21,19 @@ longitude = 12.1801452
 
 tz = datetime.now(timezone.utc).astimezone().tzinfo
 
-events = {}
+# Sending to the logger computer 
+def log_print(data):
+    print(data)
+    if do_debug_logging:
+        try: requests.post(f"http://{logger_address}/add", json={"from":"RPI", "data":data})
+        except: print("Could not send to log")
 
 def find(timeout, camIP):
     expireTime = datetime.now(tz) + timedelta(seconds=timeout)
     while datetime.now(tz) < expireTime:
         try:
             requests.get(f"http://{camIP}:8080/gopro/camera/keep_alive", timeout=1)
-            print(f"Found {camIP}")
+            log_print(f"Found {camIP}")
             return True
         except:
             print(f"Camera {camIP} was not found")
@@ -56,7 +61,7 @@ def stream_dropbox(clipLink, name=""):
                 dbx.files_upload_session_append_v2(chunk, cursor)
                 cursor.offset += len(chunk)
                 chunks += 1
-                print(f"Uploading chunk {chunks}, {round((cursor.offset/c_length)*100, 2)}%")
+                log_print(f"Uploading chunk {chunks}, {round((cursor.offset/c_length)*100, 2)}%")
     
     clipName = clipLink.split("/")[-1]
     localname = (name if name != '' else clipName)
@@ -64,7 +69,7 @@ def stream_dropbox(clipLink, name=""):
     commit = dropbox.files.CommitInfo(path=f"/videos/{localname}")
     dbx.files_upload_session_finish(b'', cursor, commit)
 
-    print("Upload completed!")
+    log_print("Upload completed!")
 
 def get_last_clip(camIP):
     mediaList = requests.get(f"http://{camIP}:8080/gopro/media/list").json()["media"]
@@ -137,8 +142,7 @@ def main():
     ser.write(b"Booted")
 
     # split into if the camera is availeable or not
-    if not find(30, camIP):
-        print("cam was not found :(")
+        log_print("cam was not found :(")
         events = event_times_local(latitude, longitude)
         if events["last"]["time"] > (datetime.now(tz)-timedelta(minutes=10)):
             esp32_shutdown(10)
@@ -147,12 +151,12 @@ def main():
         try:
             sleeptime = (clip_length - 20)
             if sleeptime < 0: sleeptime = 0
-            print(f"Sleeping for {sleeptime} seconds")
+            log_print(f"Sleeping for {sleeptime} seconds")
             time.sleep(sleeptime)
         except KeyboardInterrupt:
-            print("KeyboardInterrupt, skipping...")
+            log_print("KeyboardInterrupt, skipping...")
 
-        print("Done sleeping")
+        log_print("Done sleeping")
 
         # Finding the event after it has pased for better distingtion
         events = event_times_local(latitude, longitude)
@@ -160,21 +164,20 @@ def main():
         clipName = get_last_clip(camIP)
         clipLink = f"http://{camIP}:8080/videos/DCIM/100GOPRO/{clipName}"
 
-        print(f"Last clip was {clipName}")
+        log_print(f"Last clip was {clipName}")
 
         now = datetime.now(tz)
 
         try:
-            print("Trying to upload to dropbox")
+            log_print("Trying to upload to dropbox")
             stream_dropbox(clipLink, f"{datetime.strftime(now, '%y-%m-%d_%H-%M-%S')}_Sun{events['last']['type']}.mp4")
             delete_clip(camIP, clipName)
             uploadTime = (datetime.now(tz)-now).total_seconds()
-            print(f"Uploading took {uploadTime//60} minutes and {round(uploadTime%60)} seconds")
+            log_print(f"Uploading took {uploadTime//60} minutes and {round(uploadTime%60)} seconds")
         except Exception as E:
-            print("something went wrong while uploading/deleting", E)
-    
+            log_print("something went wrong while uploading/deleting", E)
     secondsUntillWakeup = (events["next"]["time"] - datetime.now(tz)).total_seconds() - (clip_length/2)
-    print(f"Seconds untill next wakeup: {secondsUntillWakeup}")
+    log_print(f"Seconds untill next wakeup: {secondsUntillWakeup}")
 
     esp32_shutdown(round(secondsUntillWakeup))
     
@@ -184,7 +187,7 @@ if __name__ == "__main__":
     try:
         main()
     except Exception as E:
-        print("Error occured: ", E)
+        log_print(f"Error occured: {E}")
     
     # If error, wait 1 minute and try again
     while True:
@@ -192,4 +195,4 @@ if __name__ == "__main__":
         try:
             esp32_shutdown(10)
         except Exception as E:
-            print(f"Error: {E}")
+            log_print(f"Error: {E}")
