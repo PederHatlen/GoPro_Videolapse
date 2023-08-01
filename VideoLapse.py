@@ -1,5 +1,6 @@
 '''
-Kode for å styre et GoPro Hero 11 Kamera for å ta en video på soloppgang, solnedgang og x tidspunkt.
+Kode for å styre et GoPro Hero 11 Kamera for å ta en video på soloppgang, solnedgang og midt på dagen.
+
 
 '''
 
@@ -9,17 +10,26 @@ from datetime import datetime, timedelta, timezone
 from subprocess import call
 
 # Defs
-fileFormatOut = ".mp4"
-
-clip_length = 30
-
-camIP = "172.24.151.51"
-microController_serial = "/dev/ttyS0"
-
+# Location
 latitude = 62.0075084
 longitude = 12.1801452
 
-tz = datetime.now(timezone.utc).astimezone().tzinfo
+# Sending events to a logging machine
+do_debug_logging = True
+logger_address = "100.104.214.52:1337" # for testing
+
+# Addresses for devices
+GoProIP = "172.24.151.51"
+microController_serial = "/dev/ttyS0"
+
+# Dropbox
+dropbox_refresh_token = "[Refresh token]"
+dropbox_auth_key = "[Auth key]"
+
+clip_length = 30 # Seconds, Needs to be changed in gopro labs as well
+
+tz = datetime.now(timezone.utc).astimezone().tzinfo # Timezone used for dates
+
 
 # Sending to the logger computer 
 def log_print(data):
@@ -28,30 +38,35 @@ def log_print(data):
         try: requests.post(f"http://{logger_address}/add", json={"from":"RPI", "data":data})
         except: print("Could not send to log")
 
-def find(timeout, camIP):
+# Find the gopro cammera by sending requests
+def find(timeout, GoProIP):
     expireTime = datetime.now(tz) + timedelta(seconds=timeout)
     while datetime.now(tz) < expireTime:
         try:
-            requests.get(f"http://{camIP}:8080/gopro/camera/keep_alive", timeout=1)
-            log_print(f"Found {camIP}")
+            requests.get(f"http://{GoProIP}:8080/gopro/camera/keep_alive", timeout=1)
+            log_print(f"Found {GoProIP}")
             return True
         except:
-            print(f"Camera {camIP} was not found")
+            print(f"Camera {GoProIP} was not found")
         time.sleep(1)
     print("Could not find gopro in time")
     return False
 
-def get_dropbox_accesskey():
-    payload = 'refresh_token=[refresh_token]&grant_type=refresh_token'
-    headers = {'Content-Type': 'application/x-www-form-urlencoded', 'Authorization': 'Basic [Authentification]'}
+# Get the token needed to upload to dropbox, refresh token and authorization key needed
+def get_dropbox_accesskey(dropbox_refresh_token, dropbox_auth_key):
+    payload = f'refresh_token={dropbox_refresh_token}&grant_type=refresh_token'
+    headers = {'Content-Type': 'application/x-www-form-urlencoded', 'Authorization': f'Basic {dropbox_auth_key}'}
     r = requests.post("https://api.dropboxapi.com/oauth2/token", headers=headers, data=payload)
     return r.json()["access_token"]
 
+# Stream file from gopro to dropbox (dropbox upload sessions, becouse files may be over 150Mb)
 def stream_dropbox(clipLink, name=""):
-    dbx = dropbox.dropbox_client.Dropbox(get_dropbox_accesskey())
+    # Get the accesskey and making a connection to dropbox, start session and start upload
+    dbx = dropbox.dropbox_client.Dropbox(get_dropbox_accesskey(dropbox_refresh_token, dropbox_auth_key))
     upload_session_start_result = dbx.files_upload_session_start(b'')
     cursor = dropbox.files.UploadSessionCursor(session_id=upload_session_start_result.session_id, offset=0)
 
+    # Uploading chunk by chunk from datastream
     with requests.get(clipLink, stream=True) as r:
         print(r.headers)
         c_length = int(r.headers['Content-Length'])
@@ -66,21 +81,25 @@ def stream_dropbox(clipLink, name=""):
     clipName = clipLink.split("/")[-1]
     localname = (name if name != '' else clipName)
 
+    # Finish uploading
     commit = dropbox.files.CommitInfo(path=f"/videos/{localname}")
     dbx.files_upload_session_finish(b'', cursor, commit)
 
     log_print("Upload completed!")
 
-def get_last_clip(camIP):
-    mediaList = requests.get(f"http://{camIP}:8080/gopro/media/list").json()["media"]
+# Get the last recorded file from gopro
+def get_last_clip(GoProIP):
+    mediaList = requests.get(f"http://{GoProIP}:8080/gopro/media/list").json()["media"]
     if mediaList == []: return False
 
     return mediaList[0]["fs"][-1]["n"]
 
-def delete_clip(camIP, clipName):
-    r = requests.get(f"http://{camIP}:8080/gopro/media/delete/file?path=100GOPRO/{clipName}")
+# Delete a clip from gopro
+def delete_clip(GoProIP, clipName):
+    r = requests.get(f"http://{GoProIP}:8080/gopro/media/delete/file?path=100GOPRO/{clipName}")
     return r.status_code
 
+# Get event times from the YR api, works great, when internet is connected, but differs a bit from local calculation
 def event_times(lat, long):
     neededEvents = ["Rise", "ElevationMax", "Set"]
     last = {}
@@ -98,11 +117,13 @@ def event_times(lat, long):
 
     return False
 
+# Local only calculation of sun, quite fast, but not as accurate as YR
 def event_times_local(lat, long):
     now = datetime.now(tz)
     day = timedelta(days=1)
     obs = Observer(lat, long)
 
+    # Getting sun events for all events around a day (sunset yesterday, everything today and sunrise tomorrow)
     events = [
         {"type":"Set", "time":sun.sunset(obs, now - day, tz)},
         {"type":"Rise", "time":sun.sunrise(obs, now, tz)},
@@ -111,6 +132,7 @@ def event_times_local(lat, long):
         {"type":"Rise", "time":sun.sunrise(obs, now + day, tz)}
     ]
 
+    # Filtering the events with only the last and the next events
     last = {}
     for e in events:
         if now < e["time"]: return {"last":last, "next":e}
@@ -118,35 +140,42 @@ def event_times_local(lat, long):
 
     return False
 
+# Spoofing the eventtimes, now + 5 minutes
 def event_times_fake(lat, long):
     now = datetime.now(tz)
-    return {"last":{"type":"Test", "time":now-timedelta(seconds=80)}, "next":{"type":"Test", "time":now+timedelta(seconds=80)}}
+    return {"last":{"type":"Test_Last", "time":now-timedelta(minutes=5)}, "next":{"type":"Test_Next", "time":now+timedelta(minutes=5)}}
 
+# This might need som rewriting/changing
 def esp32_shutdown(secondsUntillWakeup):
     # Connecting to esp32
     ser = serial.Serial(microController_serial, 9600)
 
     ser.write(b"Hello i believe you exist maybe?")
-    print(ser.readline())
+    # data = ser.readline()
+    # log_print(data)
 
-    ser.write(str(secondsUntillWakeup).encode('ascii'))
+    ser.write(f"Sleep for {secondsUntillWakeup} seconds\n".encode('ascii'))
 
+    # Shutdown raspberrypi properly
     call("sudo shutdown -h now", shell=True)
     
 
+# Main function, combines everything
 def main():
-    global events
+    events = {}
 
     ser = serial.Serial(microController_serial, 9600)
 
     ser.write(b"Booted")
 
     # split into if the camera is availeable or not
+    if not find(30, GoProIP):
+        # If camera is not available
         log_print("cam was not found :(")
         events = event_times_local(latitude, longitude)
-        if events["last"]["time"] > (datetime.now(tz)-timedelta(minutes=10)):
-            esp32_shutdown(10)
+        if events["last"]["time"] > (datetime.now(tz)-timedelta(minutes=10)): esp32_shutdown(70)
     else:
+        # If camera is availeable
         # Sleep untill clip is done recording
         try:
             sleeptime = (clip_length - 20)
@@ -161,8 +190,8 @@ def main():
         # Finding the event after it has pased for better distingtion
         events = event_times_local(latitude, longitude)
 
-        clipName = get_last_clip(camIP)
-        clipLink = f"http://{camIP}:8080/videos/DCIM/100GOPRO/{clipName}"
+        clipName = get_last_clip(GoProIP)
+        clipLink = f"http://{GoProIP}:8080/videos/DCIM/100GOPRO/{clipName}"
 
         log_print(f"Last clip was {clipName}")
 
@@ -170,18 +199,19 @@ def main():
 
         try:
             log_print("Trying to upload to dropbox")
-            stream_dropbox(clipLink, f"{datetime.strftime(now, '%y-%m-%d_%H-%M-%S')}_Sun{events['last']['type']}.mp4")
-            delete_clip(camIP, clipName)
+            stream_dropbox(clipLink, f"{datetime.strftime(events['last']['time'], '%y-%m-%d_%H-%M-%S')}_Sun{events['last']['type']}.mp4")
+            delete_clip(GoProIP, clipName)
             uploadTime = (datetime.now(tz)-now).total_seconds()
             log_print(f"Uploading took {uploadTime//60} minutes and {round(uploadTime%60)} seconds")
         except Exception as E:
             log_print("something went wrong while uploading/deleting", E)
+
+    # next event time - time now - half clip time = seconds untill next clip should start
     secondsUntillWakeup = (events["next"]["time"] - datetime.now(tz)).total_seconds() - (clip_length/2)
     log_print(f"Seconds untill next wakeup: {secondsUntillWakeup}")
 
     esp32_shutdown(round(secondsUntillWakeup))
     
-
 
 if __name__ == "__main__":
     try:
@@ -193,6 +223,6 @@ if __name__ == "__main__":
     while True:
         time.sleep(5)
         try:
-            esp32_shutdown(10)
+            esp32_shutdown(70)
         except Exception as E:
             log_print(f"Error: {E}")
