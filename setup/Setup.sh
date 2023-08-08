@@ -11,7 +11,7 @@ rm -f /home/nrkbeta/VideoLapse.py
 wget "${serverIP}/VideoLapse.py" -O /home/nrkbeta/VideoLapse.py
 
 rm -f /lib/systemd/system/VideoLapse.service
-sudo wget "${serverIP}/VideoLapse.service" -O /lib/systemd/system/VideoLapse.service
+sudo wget "${serverIP}/setup/VideoLapse.service" -O /lib/systemd/system/VideoLapse.service
 sudo chmod 644 /lib/systemd/system/VideoLapse.service
 
 sudo systemctl daemon-reload
