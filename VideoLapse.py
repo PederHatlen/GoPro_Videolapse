@@ -3,7 +3,7 @@ Kode for å styre et GoPro Hero 11 Kamera for å ta en video på soloppgang, sol
 
 
 '''
-
+import os
 import requests, time, serial, dropbox
 from astral import sun, Observer
 from datetime import datetime, timedelta, timezone
@@ -23,8 +23,8 @@ GoProIP = "172.24.151.51"
 microController_serial = "/dev/ttyS0"
 
 # Dropbox
-dropbox_refresh_token = "[Refresh token]"
-dropbox_auth_key = "[Auth key]"
+dropbox_refresh_token = os.environ["DROPBOX_REFRESH_TOKEN"]
+dropbox_auth_key = os.environ["DROPBOX_AUTH_KEY"]
 
 clip_length = 30 # Seconds, Needs to be changed in gopro labs as well
 
@@ -157,7 +157,7 @@ def esp32_shutdown(secondsUntillWakeup):
     ser.write(f"Sleep for {secondsUntillWakeup} seconds\n".encode('ascii'))
 
     # Shutdown raspberrypi properly
-    call("sudo shutdown -h now", shell=True)
+    #call("sudo shutdown -h now", shell=True)
     
 
 # Main function, combines everything
