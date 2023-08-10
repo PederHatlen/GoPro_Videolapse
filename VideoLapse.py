@@ -16,7 +16,7 @@ longitude = 12.1801452
 
 # Sending events to a logging machine
 do_debug_logging = True
-logger_address = "100.104.214.52:1337" # for testing
+logger_address = "109.74.200.4:1338" # for testing
 
 # Addresses for devices
 GoProIP = "172.24.151.51"
