@@ -89,6 +89,9 @@ def stream_dropbox(clipLink, name=""):
 
 # Get the last recorded file from gopro
 def get_last_clip(GoProIP):
+    log_print(f"Trying to access: http://{GoProIP}:8080/gopro/media/list")
+    log_print(requests.get("http://172.24.151.51:8080/gopro/media/list").text)
+    time.sleep(20)
     mediaList = requests.get(f"http://{GoProIP}:8080/gopro/media/list").json()["media"]
     if mediaList == []: return False
 
@@ -98,6 +101,13 @@ def get_last_clip(GoProIP):
 def delete_clip(GoProIP, clipName):
     r = requests.get(f"http://{GoProIP}:8080/gopro/media/delete/file?path=100GOPRO/{clipName}")
     return r.status_code
+
+def delete_all_clips(GoProIP):
+    mediaList = requests.get(f"http://{GoProIP}:8080/gopro/media/list").json()["media"][0]['fs']
+    for obj in mediaList:
+        delete_clip(GoProIP, obj["n"])
+        log_print("Deleted %s" % obj["n"])
+    return True
 
 # Get event times from the YR api, works great, when internet is connected, but differs a bit from local calculation
 def event_times(lat, long):
@@ -178,7 +188,7 @@ def main():
         # If camera is availeable
         # Sleep untill clip is done recording
         try:
-            sleeptime = (clip_length - 20)
+            sleeptime = (clip_length)
             if sleeptime < 0: sleeptime = 0
             log_print(f"Sleeping for {sleeptime} seconds")
             time.sleep(sleeptime)
@@ -199,18 +209,20 @@ def main():
 
         try:
             log_print("Trying to upload to dropbox")
-            stream_dropbox(clipLink, f"{datetime.strftime(events['last']['time'], '%y-%m-%d_%H-%M-%S')}_Sun{events['last']['type']}.mp4")
+            stream_dropbox(clipLink, f"{clipName}_{datetime.strftime(events['last']['time'], '%y-%m-%d_%H-%M-%S')}_Sun{events['last']['type']}.mp4")
             delete_clip(GoProIP, clipName)
+            #delete_all_clips(GoProIP)
             uploadTime = (datetime.now(tz)-now).total_seconds()
             log_print(f"Uploading took {uploadTime//60} minutes and {round(uploadTime%60)} seconds")
         except Exception as E:
-            log_print("something went wrong while uploading/deleting", E)
+            log_print("something went wrong while uploading/deleting %s" % E)
 
+    events = event_times_local(latitude, longitude)
     # next event time - time now - half clip time = seconds untill next clip should start
     secondsUntillWakeup = (events["next"]["time"] - datetime.now(tz)).total_seconds() - (clip_length/2)
     log_print(f"Seconds untill next wakeup: {secondsUntillWakeup}")
 
-    esp32_shutdown(round(secondsUntillWakeup))
+    esp32_shutdown(abs(round(secondsUntillWakeup)))
     
 
 if __name__ == "__main__":
