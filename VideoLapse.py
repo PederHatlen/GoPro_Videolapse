@@ -62,31 +62,34 @@ def get_dropbox_accesskey(dropbox_refresh_token, dropbox_auth_key):
 
 # Stream file from gopro to dropbox (dropbox upload sessions, becouse files may be over 150Mb)
 def stream_dropbox(clipLink, name=""):
-    # Get the accesskey and making a connection to dropbox, start session and start upload
-    dbx = dropbox.dropbox_client.Dropbox(get_dropbox_accesskey(dropbox_refresh_token, dropbox_auth_key))
-    upload_session_start_result = dbx.files_upload_session_start(b'')
-    cursor = dropbox.files.UploadSessionCursor(session_id=upload_session_start_result.session_id, offset=0)
+    try:
+        # Get the accesskey and making a connection to dropbox, start session and start upload
+        dbx = dropbox.dropbox_client.Dropbox(get_dropbox_accesskey(dropbox_refresh_token, dropbox_auth_key))
+        upload_session_start_result = dbx.files_upload_session_start(b'')
+        cursor = dropbox.files.UploadSessionCursor(session_id=upload_session_start_result.session_id, offset=0)
 
-    # Uploading chunk by chunk from datastream
-    with requests.get(clipLink, stream=True) as r:
-        print(r.headers)
-        c_length = int(r.headers['Content-Length'])
-        chunks = 0
-        for chunk in r.iter_content(chunk_size=4*1024*1024):
-            if chunk: 
-                dbx.files_upload_session_append_v2(chunk, cursor)
-                cursor.offset += len(chunk)
-                chunks += 1
-                log_print(f"Uploading chunk {chunks}, {round((cursor.offset/c_length)*100, 2)}%")
-    
-    clipName = clipLink.split("/")[-1]
-    localname = (name if name != '' else clipName)
+        # Uploading chunk by chunk from datastream
+        with requests.get(clipLink, stream=True) as r:
+            print(r.headers)
+            c_length = int(r.headers['Content-Length'])
+            chunks = 0
+            for chunk in r.iter_content(chunk_size=4*1024*1024):
+                if chunk: 
+                    dbx.files_upload_session_append_v2(chunk, cursor)
+                    cursor.offset += len(chunk)
+                    chunks += 1
+                    log_print(f"Uploading chunk {chunks}, {round((cursor.offset/c_length)*100, 2)}%")
+        
+        clipName = clipLink.split("/")[-1]
+        localname = (name if name != '' else clipName)
 
-    # Finish uploading
-    commit = dropbox.files.CommitInfo(path=f"/videos/{localname}")
-    dbx.files_upload_session_finish(b'', cursor, commit)
+        # Finish uploading
+        commit = dropbox.files.CommitInfo(path=f"/videos/{localname}")
+        dbx.files_upload_session_finish(b'', cursor, commit)
 
-    log_print("Upload completed!")
+        log_print("Upload completed!")
+    except KeyboardInterrupt:
+        log_print("Keyboard interupt, Skipping upload...")
 
 # Get the last recorded file from gopro
 def get_last_clip(GoProIP):
