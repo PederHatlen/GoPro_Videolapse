@@ -4,6 +4,7 @@ Kode for å styre et GoPro Hero 11 Kamera for å ta en video på soloppgang, sol
 
 '''
 import os
+import re
 import requests, time, serial, dropbox
 from astral import sun, Observer
 from datetime import datetime, timedelta, timezone
@@ -163,6 +164,20 @@ def esp32_shutdown(secondsUntillWakeup):
     ser.write(b"Hello i believe you exist maybe?")
     # data = ser.readline()
     # log_print(data)
+
+    voltage = None
+
+    while voltage == None:
+        data = ser.readline().decode('utf-8').strip()
+        if data:
+            log_print("Received data from serial port: ", data)
+            voltage = re.search("(?<=Voltage )(.*?)(?=\s*;)", data)
+            if voltage != None:
+                log_print("Voltage", voltage)
+        else:
+            log_print("did not get voltage from controller")
+        time.sleep(0.5)
+
 
     ser.write(f"Sleep for {secondsUntillWakeup} seconds\n".encode('ascii'))
 
