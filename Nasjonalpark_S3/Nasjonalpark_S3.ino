@@ -58,13 +58,11 @@ void setup() {
   // Wait untill rpi sends sleep time
 
 
-
   while (timeout == 0){
     delay(1000);
     Serial1.println("Voltage:"+String(res)+";");
     USBSerial.println("Voltage:"+String(res)+";");
     timeout = Serial1.parseInt();
-    timeout = USBSerial.parseInt();
   }
 
   Serial1.println((String)"Seconds untill wakeup: "+String(timeout));
