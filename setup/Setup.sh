@@ -1,17 +1,17 @@
 #! /bin/sh
 
-serverIP="192.168.1.39:5500"
-
 sudo apt update
 sudo apt -y install python3.9 libpython3.9-dev python3-pip tmux
+
+curl -fsSL https://tailscale.com/install.sh | sh
 
 python3 -m pip install requests pyserial dropbox astral
 
 rm -f /home/nrkbeta/VideoLapse.py
-wget "${serverIP}/VideoLapse.py" -O /home/nrkbeta/VideoLapse.py
+wget "https://raw.github.com/PederHatlen/GoPro_Videolapse/main/VideoLapse.py" -O /home/nrkbeta/VideoLapse.py
 
 rm -f /lib/systemd/system/VideoLapse.service
-sudo wget "${serverIP}/setup/VideoLapse.service" -O /lib/systemd/system/VideoLapse.service
+sudo wget "https://raw.github.com/PederHatlen/GoPro_Videolapse/main/setup/VideoLapse.service" -O /lib/systemd/system/VideoLapse.service
 sudo chmod 644 /lib/systemd/system/VideoLapse.service
 
 sudo systemctl daemon-reload

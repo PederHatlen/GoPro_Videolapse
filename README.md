@@ -24,6 +24,10 @@ Biblioteker som trengs: `re`, `os`, `requests`, `psutil`, `time`, `datetime`, `s
 
 Komando for å installere alle bibliotek: `python3 -m pip install re os requests psutil time datetime suntime`  
 
+## Opsett
+
+`curl -fsSL https://raw.github.com/PederHatlen/GoPro_Videolapse/main/setup/Setup.sh | sh`
+
 ## Hardware liste
 
 Liste over alle komponenter som trengs:
