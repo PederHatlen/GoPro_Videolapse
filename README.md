@@ -26,7 +26,17 @@ Komando for å installere alle bibliotek: `python3 -m pip install re os requests
 
 ## Opsett
 
-`curl -fsSL https://raw.github.com/PederHatlen/GoPro_Videolapse/main/setup/Setup.sh | sh`
+1. Lag ett mikro-sd kort med raspbian og ssh tilgjengelig, bruk en ethernet kabel for internett.
+2. Aktiver UART over serial.
+    - Komandoen `sudo raspi-config`
+    - `Interface options`
+    - `Serial Port`
+    - `No` til Login shell
+    - `Yes` til enable hardware
+    - `Finish`
+3. Kjør komandoen `curl -fsSL https://raw.github.com/PederHatlen/GoPro_Videolapse/main/setup/Setup.sh | sh` (Laster ned og kjører setup scriptet)
+4. Lim in Dropbox verdiene når etterspurt
+5. Legg maskinen inn i tailscale, ved å gå inn på linken
 
 ## Hardware liste
 
