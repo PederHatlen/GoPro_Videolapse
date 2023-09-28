@@ -95,7 +95,7 @@ def stream_dropbox(clipLink, name=""):
 def get_last_clip(GoProIP):
     log_print(f"Trying to access: http://{GoProIP}:8080/gopro/media/list")
     log_print(requests.get("http://172.24.151.51:8080/gopro/media/list").text)
-    time.sleep(20)
+    # time.sleep(20)
     mediaList = requests.get(f"http://{GoProIP}:8080/gopro/media/list").json()["media"]
     if mediaList == []: return False
 
@@ -173,14 +173,17 @@ def esp32_shutdown(secondsUntillWakeup):
     while voltage == None:
         data = ser.readline().decode('utf-8').strip()
         if data:
-            log_print("Received data from serial port: ", data)
-            voltage = re.search("(?<=Voltage )(.*?)(?=\s*;)", data)
-            if voltage != None:
-                log_print("Voltage", voltage)
+            log_print(f"Received data from serial port: {data}")
+            match = re.search("(?<=Voltage:)(.*?)(?=\s*;)", data)
+            if match:
+                voltage = match.group(0)
+                log_print(f"Voltage: {voltage}")
+                break
         else:
             log_print("did not get voltage from controller")
         time.sleep(0.5)
 
+    log_print("Sending sleep command to stamp")
 
     ser.write(f"Sleep for {secondsUntillWakeup} seconds\n".encode('ascii'))
 
@@ -190,6 +193,10 @@ def esp32_shutdown(secondsUntillWakeup):
 
 # Main function, combines everything
 def main():
+
+    # sending Temperature 
+    log_print(f"Temperature: {int(open('/sys/class/thermal/thermal_zone0/temp').read())/1000}")
+
     events = {}
 
     ser = serial.Serial(microController_serial, 9600)
