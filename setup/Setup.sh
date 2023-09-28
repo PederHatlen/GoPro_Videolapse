@@ -17,4 +17,12 @@ sudo chmod 644 /lib/systemd/system/VideoLapse.service
 sudo systemctl daemon-reload
 sudo systemctl enable VideoLapse.service
 
-# sudo shutdown -r now
+read -p "Dropbox refresh token: " dropbox_refresh_token
+read -p "Dropbox auth key: " dropbox_auth_key
+
+sudo echo "export DROPBOX_REFRESH_TOKEN=" >> "/etc/profile"
+sudo echo "export DROPBOX_AUTH_KEY=" >> "/etc/profile"
+
+sudo tailscale up
+
+sudo shutdown -r now
