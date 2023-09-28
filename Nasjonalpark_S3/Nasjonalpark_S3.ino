@@ -61,8 +61,8 @@ void setup() {
 
   while (timeout == 0){
     delay(1000);
-    Serial1.println("Waiting for data");
-    USBSerial.println("Waiting for data");
+    Serial1.println("Voltage:"+String(res)+";");
+    USBSerial.println("Voltage:"+String(res)+";");
     timeout = Serial1.parseInt();
     timeout = USBSerial.parseInt();
   }
