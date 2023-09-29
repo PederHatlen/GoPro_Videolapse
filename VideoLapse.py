@@ -207,7 +207,7 @@ def main():
     if not find(30, GoProIP):
         # If camera is not available
         log_print("cam was not found :(")
-        events = event_times_local(latitude, longitude)
+        events = event_times(latitude, longitude)
         if events["last"]["time"] > (datetime.now(tz)-timedelta(minutes=10)): esp32_shutdown(70)
     else:
         # If camera is availeable
@@ -223,7 +223,7 @@ def main():
         log_print("Done sleeping")
 
         # Finding the event after it has pased for better distingtion
-        events = event_times_local(latitude, longitude)
+        events = event_times(latitude, longitude)
 
         clipName = get_last_clip(GoProIP)
         clipLink = f"http://{GoProIP}:8080/videos/DCIM/100GOPRO/{clipName}"
@@ -242,7 +242,7 @@ def main():
         except Exception as E:
             log_print("something went wrong while uploading/deleting %s" % E)
 
-    events = event_times_local(latitude, longitude)
+    events = event_times(latitude, longitude)
     # next event time - time now - half clip time = seconds untill next clip should start
     secondsUntillWakeup = (events["next"]["time"] - datetime.now(tz)).total_seconds() - (clip_length/2)
     log_print(f"Seconds untill next wakeup: {secondsUntillWakeup}")
