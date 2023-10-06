@@ -27,7 +27,7 @@ void setup() {
 
   for (int i = 0; i < 1000; i++) {
     //int analogVolts = analogReadMilliVolts(5);
-    cur = 0.0066 * analogReadMilliVolts(5);
+    cur = 0.0023 * analogReadMilliVolts(5);
     res = (0.1 * cur) + (0.9 * res);
     delay(1);  
   }
@@ -58,11 +58,13 @@ void setup() {
   // Wait untill rpi sends sleep time
 
 
+
   while (timeout == 0){
     delay(1000);
     Serial1.println("Voltage:"+String(res)+";");
     USBSerial.println("Voltage:"+String(res)+";");
     timeout = Serial1.parseInt();
+//    timeout = USBSerial.parseInt();
   }
 
   Serial1.println((String)"Seconds untill wakeup: "+String(timeout));
