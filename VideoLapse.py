@@ -31,13 +31,21 @@ clip_length = 30 # Seconds, Needs to be changed in gopro labs as well
 
 tz = datetime.now(timezone.utc).astimezone().tzinfo # Timezone used for dates
 
+# Getting Temperature (raspberry is environment temperature right after boot)
+temperature = int(open('/sys/class/thermal/thermal_zone0/temp').read())/1000
+voltage = None # Voltage is gathered by micro controller
 
 # Sending to the logger computer 
 def log_print(data):
     print(data)
     if do_debug_logging:
-        try: requests.post(f"http://{logger_address}/add", json={"from":"RPI", "data":data})
+        try: requests.post(f"http://{logger_address}/log", json={"from":"RPI", "text":data})
         except: print("Could not send to log")
+
+def send_status(volt, temp, next_event, current_event_name):
+    # Sending next event as a unix timestamp
+    try: requests.post(f"http://{logger_address}/status", json={"volt":volt, "temp":temp, "current_event_name":current_event_name, "next_event":next_event.isoformat()})
+    except: log_print("Could not send status")
 
 # Find the gopro cammera by sending requests
 def find(timeout, GoProIP):
@@ -94,7 +102,7 @@ def stream_dropbox(clipLink, name=""):
 # Get the last recorded file from gopro
 def get_last_clip(GoProIP):
     log_print(f"Trying to access: http://{GoProIP}:8080/gopro/media/list")
-    log_print(requests.get("http://172.24.151.51:8080/gopro/media/list").text)
+    # log_print(requests.get("http://172.24.151.51:8080/gopro/media/list").text)
     # time.sleep(20)
     mediaList = requests.get(f"http://{GoProIP}:8080/gopro/media/list").json()["media"]
     if mediaList == []: return False
@@ -160,15 +168,15 @@ def event_times_fake(lat, long):
     return {"last":{"type":"Test_Last", "time":now-timedelta(minutes=5)}, "next":{"type":"Test_Next", "time":now+timedelta(minutes=5)}}
 
 # This might need som rewriting/changing
-def esp32_shutdown(secondsUntillWakeup):
+def esp32_shutdown(eventTime, current_event_name):
+    # next event time - time now - half clip time = seconds untill next clip should start
+    secondsUntillWakeup = abs(round(eventTime - datetime.now(tz)).total_seconds() - (clip_length/2))
+    log_print(f"Seconds untill next wakeup: {secondsUntillWakeup}")
+
     # Connecting to esp32
     ser = serial.Serial(microController_serial, 9600)
 
     ser.write(b"Hello i believe you exist maybe?")
-    # data = ser.readline()
-    # log_print(data)
-
-    voltage = None
 
     while voltage == None:
         data = ser.readline().decode('utf-8').strip()
@@ -183,8 +191,9 @@ def esp32_shutdown(secondsUntillWakeup):
             log_print("did not get voltage from controller")
         time.sleep(0.5)
 
-    log_print("Sending sleep command to stamp")
+    send_status(voltage, temperature, eventTime, current_event_name)
 
+    log_print("Sending sleep command to stamp")
     ser.write(f"Sleep for {secondsUntillWakeup} seconds\n".encode('ascii'))
 
     # Shutdown raspberrypi properly
@@ -193,10 +202,6 @@ def esp32_shutdown(secondsUntillWakeup):
 
 # Main function, combines everything
 def main():
-
-    # sending Temperature 
-    log_print(f"Temperature: {int(open('/sys/class/thermal/thermal_zone0/temp').read())/1000}")
-
     events = {}
 
     ser = serial.Serial(microController_serial, 9600)
@@ -243,11 +248,8 @@ def main():
             log_print("something went wrong while uploading/deleting %s" % E)
 
     events = event_times(latitude, longitude)
-    # next event time - time now - half clip time = seconds untill next clip should start
-    secondsUntillWakeup = (events["next"]["time"] - datetime.now(tz)).total_seconds() - (clip_length/2)
-    log_print(f"Seconds untill next wakeup: {secondsUntillWakeup}")
 
-    esp32_shutdown(abs(round(secondsUntillWakeup)))
+    esp32_shutdown(abs(round(events["next"]["time"])), events["last"]["name"])
     
 
 if __name__ == "__main__":
