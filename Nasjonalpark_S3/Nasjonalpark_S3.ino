@@ -44,13 +44,10 @@ void setup() {
   FastLED.show();
 
   // Wait untill rpi sends sleep time
-
-
-
   while (timeout == 0){
     delay(1000);
-    Serial1.println("Hello i exist");
-    USBSerial.println("Hello i exist");
+    Serial1.println("Voltage:0;");
+    USBSerial.println("Voltage:0;");
     timeout = Serial1.parseInt();
   }
 
