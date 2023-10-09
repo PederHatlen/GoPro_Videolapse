@@ -18,20 +18,11 @@ CRGB leds[NUM_LEDS];
 unsigned long timeout = 0;
 
 void setup() {
-  analogReadResolution(12);
   USBSerial.begin(115200);
   USBSerial.println();
   USBSerial.println("boot!");
 
   delay(1000);
-
-  for (int i = 0; i < 1000; i++) {
-    //int analogVolts = analogReadMilliVolts(5);
-    cur = 0.0023 * analogReadMilliVolts(5);
-    res = (0.1 * cur) + (0.9 * res);
-    delay(1);  
-  }
-
 
   // Start power to camera system
   pinMode(relay_pin1, OUTPUT);
@@ -45,10 +36,7 @@ void setup() {
   FastLED.show();
 
   digitalWrite(relay_pin1, HIGH);
-
-  Serial1.println("Voltage:"+String(res)+";");
-  USBSerial.println("Voltage:"+String(res)+";");
-  
+ 
   Serial1.println("Hello i exist");
   USBSerial.println("Hello i exist");
 
@@ -61,10 +49,9 @@ void setup() {
 
   while (timeout == 0){
     delay(1000);
-    Serial1.println("Voltage:"+String(res)+";");
-    USBSerial.println("Voltage:"+String(res)+";");
+    Serial1.println("Hello i exist");
+    USBSerial.println("Hello i exist");
     timeout = Serial1.parseInt();
-//    timeout = USBSerial.parseInt();
   }
 
   Serial1.println((String)"Seconds untill wakeup: "+String(timeout));
