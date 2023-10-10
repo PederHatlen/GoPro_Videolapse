@@ -4,7 +4,6 @@ Kode for å styre et GoPro Hero 11 Kamera for å ta en video på soloppgang, sol
 
 '''
 import os
-import re
 import requests, time, serial, dropbox
 from astral import sun, Observer
 from datetime import datetime, timedelta, timezone
@@ -107,7 +106,7 @@ def stream_dropbox(clipLink, name=""):
 def get_last_clip(GoProIP):
     log_print(f"Trying to access: http://{GoProIP}:8080/gopro/media/list")
     # log_print(requests.get("http://172.24.151.51:8080/gopro/media/list").text)
-    time.sleep(20)
+    # time.sleep(20)
     mediaList = requests.get(f"http://{GoProIP}:8080/gopro/media/list").json()["media"]
     if mediaList == []: return False
 
@@ -197,7 +196,7 @@ def main():
     ser.write(b"Booted")
 
     # split into if the camera is availeable or not
-    if not find(30, GoProIP):
+    if not find(clip_length, GoProIP):
         # If camera is not available
         log_print("cam was not found :(")
         events = event_times(latitude, longitude)
@@ -206,10 +205,8 @@ def main():
         # If camera is availeable
         # Sleep untill clip is done recording
         try:
-            sleeptime = (clip_length)
-            if sleeptime < 0: sleeptime = 0
-            log_print(f"Sleeping for {sleeptime} seconds")
-            time.sleep(sleeptime)
+            log_print(f"Sleeping for {clip_length} seconds")
+            time.sleep(clip_length)
         except KeyboardInterrupt:
             log_print("KeyboardInterrupt, skipping...")
 
@@ -220,6 +217,11 @@ def main():
 
         clipName = get_last_clip(GoProIP)
         clipLink = f"http://{GoProIP}:8080/videos/DCIM/100GOPRO/{clipName}"
+
+        if not clipName:
+            log_print("Did not find any clips")
+            esp32_shutdown(events["next"]["time"], events["last"]["name"])
+            return
 
         log_print(f"Last clip was {clipName}")
 
@@ -234,8 +236,6 @@ def main():
             log_print(f"Uploading took {uploadTime//60} minutes and {(uploadTime%60)} seconds")
         except Exception as E:
             log_print("something went wrong while uploading/deleting %s" % E)
-
-    events = event_times(latitude, longitude)
 
     esp32_shutdown(events["next"]["time"], events["last"]["name"])
     
