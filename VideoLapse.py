@@ -243,7 +243,7 @@ def main():
             delete_clip(GoProIP, clipName)
             #delete_all_clips(GoProIP)
             uploadTime = (datetime.now(tz)-now).total_seconds()
-            log_print(f"Uploading took {uploadTime//60} minutes and {round(uploadTime%60)} seconds")
+            log_print(f"Uploading took {uploadTime//60} minutes and {(uploadTime%60)} seconds")
         except Exception as E:
             log_print("something went wrong while uploading/deleting %s" % E)
 
