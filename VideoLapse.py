@@ -169,8 +169,11 @@ def event_times_fake(lat, long):
 
 # This might need som rewriting/changing
 def esp32_shutdown(eventTime, current_event_name):
-    # next event time - time now - half clip time = seconds untill next clip should start
-    secondsUntillWakeup = abs(round(eventTime - datetime.now(tz)).total_seconds() - (clip_length/2))
+    if type(eventTime) == int:
+        secondsUntillWakeup = eventTime
+    else:
+        # next event time - time now - half clip time = seconds untill next clip should start
+       secondsUntillWakeup = abs(round(eventTime - datetime.now(tz)).total_seconds() - (clip_length/2))
     log_print(f"Seconds untill next wakeup: {secondsUntillWakeup}")
 
     # Connecting to esp32
@@ -249,7 +252,7 @@ def main():
 
     events = event_times(latitude, longitude)
 
-    esp32_shutdown(abs(round(events["next"]["time"])), events["last"]["name"])
+    esp32_shutdown(events["next"]["time"], events["last"]["name"])
     
 
 if __name__ == "__main__":
