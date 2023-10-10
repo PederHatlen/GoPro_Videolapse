@@ -223,7 +223,7 @@ def main():
         # If camera is not available
         log_print("cam was not found :(")
         events = event_times(latitude, longitude)
-        if events["last"]["time"] > (datetime.now(tz)-timedelta(minutes=10)): esp32_shutdown(70, events["last"]["name"])
+        if events["last"]["time"] > (datetime.now(tz)-timedelta(minutes=10)): esp32_shutdown(datetime.now(tz) + timedelta(minutes=1), events["last"]["name"])
     else:
         # If camera is availeable
         # Sleep untill clip is done recording
@@ -272,6 +272,6 @@ if __name__ == "__main__":
     while True:
         time.sleep(5)
         try:
-            esp32_shutdown(70, "error")
+            esp32_shutdown(datetime.now(tz) + timedelta(minutes=1), "error")
         except Exception as E:
             log_print(f"Error: {E}")
