@@ -8,7 +8,7 @@ import re
 import requests, time, serial, dropbox
 from astral import sun, Observer
 from datetime import datetime, timedelta, timezone
-from subprocess import call
+from ina219 import INA219
 
 # Defs
 # Location
@@ -31,9 +31,15 @@ clip_length = 30 # Seconds, Needs to be changed in gopro labs as well
 
 tz = datetime.now(timezone.utc).astimezone().tzinfo # Timezone used for dates
 
-# Getting Temperature (raspberry is environment temperature right after boot)
-temperature = int(open('/sys/class/thermal/thermal_zone0/temp').read())/1000
-voltage = None # Voltage is gathered by micro controller
+# Voltage checking
+SHUNT_OHMS = 0.1
+MAX_EXPECTED_AMPS = 0.2
+
+ina = INA219(SHUNT_OHMS, MAX_EXPECTED_AMPS)
+ina.configure(ina.RANGE_16V)
+
+voltage = ina.voltage() # Voltage is gathered by a Adafruit INA219 Voltage sensor, using the pi-ina219 library
+temperature = int(open('/sys/class/thermal/thermal_zone0/temp').read())/1000 # Getting Temperature (raspberry is environment temperature right after boot)
 
 # Sending to the logger computer 
 def log_print(data):
@@ -182,18 +188,18 @@ def esp32_shutdown(eventTime, current_event_name):
 
     ser.write(b"Hello i believe you exist maybe?")
 
-    while voltage == None:
-        data = ser.readline().decode('utf-8').strip()
-        if data:
-            log_print(f"Received data from serial port: {data}")
-            match = re.search("(?<=Voltage:)(.*?)(?=\s*;)", data)
-            if match:
-                voltage = match.group(0)
-                log_print(f"Voltage: {voltage}")
-                break
-        else:
-            log_print("did not get voltage from controller")
-        time.sleep(0.5)
+    # while voltage == None:
+    #     data = ser.readline().decode('utf-8').strip()
+    #     if data:
+    #         log_print(f"Received data from serial port: {data}")
+    #         match = re.search("(?<=Voltage:)(.*?)(?=\s*;)", data)
+    #         if match:
+    #             voltage = match.group(0)
+    #             log_print(f"Voltage: {voltage}")
+    #             break
+    #     else:
+    #         log_print("did not get voltage from controller")
+    #     time.sleep(0.5)
 
     send_status(voltage, temperature, eventTime, current_event_name)
 

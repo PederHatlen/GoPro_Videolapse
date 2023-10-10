@@ -5,7 +5,7 @@ sudo apt -y install python3.9 libpython3.9-dev python3-pip tmux
 
 curl -fsSL https://tailscale.com/install.sh | sh
 
-python3 -m pip install requests pyserial dropbox astral
+python3 -m pip install requests pyserial dropbox astral pi-ina219
 
 rm -f /home/nrkbeta/VideoLapse.py
 wget "https://raw.github.com/PederHatlen/GoPro_Videolapse/main/VideoLapse.py" -O /home/nrkbeta/VideoLapse.py
