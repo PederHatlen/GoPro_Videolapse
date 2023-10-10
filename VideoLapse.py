@@ -31,14 +31,6 @@ clip_length = 30 # Seconds, Needs to be changed in gopro labs as well
 
 tz = datetime.now(timezone.utc).astimezone().tzinfo # Timezone used for dates
 
-# Voltage checking
-SHUNT_OHMS = 0.1
-MAX_EXPECTED_AMPS = 0.2
-
-ina = INA219(SHUNT_OHMS, MAX_EXPECTED_AMPS)
-ina.configure(ina.RANGE_16V)
-
-voltage = ina.voltage() # Voltage is gathered by a Adafruit INA219 Voltage sensor, using the pi-ina219 library
 temperature = int(open('/sys/class/thermal/thermal_zone0/temp').read())/1000 # Getting Temperature (raspberry is environment temperature right after boot)
 
 # Sending to the logger computer 
@@ -47,6 +39,12 @@ def log_print(data):
     if do_debug_logging:
         try: requests.post(f"http://{logger_address}/add", json={"from":"RPI", "text":data})
         except: print("Could not send to log")
+
+def get_voltage(SHUNT_OHMS = 0.1, MAX_EXPECTED_AMPS = 0.2):
+    # Voltage is gathered by a Adafruit INA219 Voltage sensor, using the pi-ina219 library
+    ina = INA219(SHUNT_OHMS, MAX_EXPECTED_AMPS)
+    ina.configure(ina.RANGE_16V)
+    return ina.voltage()
 
 def send_status(volt, temp, next_event, current_event_name):
     # Sending next event as a unix timestamp
@@ -175,40 +173,20 @@ def event_times_fake(lat, long):
 
 # This might need som rewriting/changing
 def esp32_shutdown(eventTime, current_event_name):
-    voltage = None
-    if type(eventTime) == int:
-        secondsUntillWakeup = eventTime
-    else:
-        # next event time - time now - half clip time = seconds untill next clip should start
-       secondsUntillWakeup = abs(round(eventTime - datetime.now(tz)).total_seconds() - (clip_length/2))
-    log_print(f"Seconds untill next wakeup: {secondsUntillWakeup}")
-
     # Connecting to esp32
     ser = serial.Serial(microController_serial, 9600)
 
     ser.write(b"Hello i believe you exist maybe?")
 
-    # while voltage == None:
-    #     data = ser.readline().decode('utf-8').strip()
-    #     if data:
-    #         log_print(f"Received data from serial port: {data}")
-    #         match = re.search("(?<=Voltage:)(.*?)(?=\s*;)", data)
-    #         if match:
-    #             voltage = match.group(0)
-    #             log_print(f"Voltage: {voltage}")
-    #             break
-    #     else:
-    #         log_print("did not get voltage from controller")
-    #     time.sleep(0.5)
+    send_status(get_voltage(), temperature, eventTime, current_event_name)
 
-    send_status(voltage, temperature, eventTime, current_event_name)
+    # next event time - time now - half clip time = seconds untill next clip should start
+    secondsUntillWakeup = abs(round(eventTime - datetime.now(tz)).total_seconds() - (clip_length/2))
+    log_print(f"Seconds untill next wakeup: {secondsUntillWakeup}")
 
     log_print("Sending sleep command to stamp")
     ser.write(f"Sleep for {secondsUntillWakeup} seconds\n".encode('ascii'))
 
-    # Shutdown raspberrypi properly
-    #call("sudo shutdown -h now", shell=True)
-    
 
 # Main function, combines everything
 def main():
