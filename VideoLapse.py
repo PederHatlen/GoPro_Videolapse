@@ -169,6 +169,7 @@ def event_times_fake(lat, long):
 
 # This might need som rewriting/changing
 def esp32_shutdown(eventTime, current_event_name):
+    voltage = None
     if type(eventTime) == int:
         secondsUntillWakeup = eventTime
     else:
