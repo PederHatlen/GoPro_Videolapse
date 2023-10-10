@@ -39,7 +39,7 @@ voltage = None # Voltage is gathered by micro controller
 def log_print(data):
     print(data)
     if do_debug_logging:
-        try: requests.post(f"http://{logger_address}/log", json={"from":"RPI", "text":data})
+        try: requests.post(f"http://{logger_address}/add", json={"from":"RPI", "text":data})
         except: print("Could not send to log")
 
 def send_status(volt, temp, next_event, current_event_name):
@@ -213,7 +213,7 @@ def main():
         # If camera is not available
         log_print("cam was not found :(")
         events = event_times(latitude, longitude)
-        if events["last"]["time"] > (datetime.now(tz)-timedelta(minutes=10)): esp32_shutdown(70)
+        if events["last"]["time"] > (datetime.now(tz)-timedelta(minutes=10)): esp32_shutdown(70, events["last"]["name"])
     else:
         # If camera is availeable
         # Sleep untill clip is done recording
@@ -262,6 +262,6 @@ if __name__ == "__main__":
     while True:
         time.sleep(5)
         try:
-            esp32_shutdown(70)
+            esp32_shutdown(70, "error")
         except Exception as E:
             log_print(f"Error: {E}")
