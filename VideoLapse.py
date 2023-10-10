@@ -103,7 +103,7 @@ def stream_dropbox(clipLink, name=""):
 def get_last_clip(GoProIP):
     log_print(f"Trying to access: http://{GoProIP}:8080/gopro/media/list")
     # log_print(requests.get("http://172.24.151.51:8080/gopro/media/list").text)
-    # time.sleep(20)
+    time.sleep(20)
     mediaList = requests.get(f"http://{GoProIP}:8080/gopro/media/list").json()["media"]
     if mediaList == []: return False
 
