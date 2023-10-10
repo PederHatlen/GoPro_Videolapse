@@ -136,9 +136,9 @@ def event_times(lat, long):
 
         eventTime = datetime.fromisoformat(event["time"]).replace(tzinfo=tz)
         if datetime.now(tz) < eventTime:
-            return {"last":last, "next":{"time":eventTime, "type":event["type"]}}
+            return {"last":last, "next":{"time":eventTime, "name":event["type"]}}
         else:
-            last = {"time":eventTime, "type":event["type"]}
+            last = {"time":eventTime, "name":event["type"]}
 
     return False
 
