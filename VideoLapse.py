@@ -136,9 +136,9 @@ def event_times(lat, long):
 
         eventTime = datetime.fromisoformat(event["time"]).replace(tzinfo=tz)
         if datetime.now(tz) < eventTime:
-            return {"last":last, "next":{"time":eventTime, "name":event["type"]}}
+            return {"last":last, "next":{"time":eventTime, "type":event["type"]}}
         else:
-            last = {"time":eventTime, "name":event["type"]}
+            last = {"time":eventTime, "type":event["type"]}
 
     return False
 
@@ -200,7 +200,7 @@ def main():
         # If camera is not available
         log_print("cam was not found :(")
         events = event_times(latitude, longitude)
-        if events["last"]["time"] > (datetime.now(tz)-timedelta(minutes=10)): esp32_shutdown(datetime.now(tz) + timedelta(minutes=1), events["last"]["name"])
+        if events["last"]["time"] > (datetime.now(tz)-timedelta(minutes=10)): esp32_shutdown(datetime.now(tz) + timedelta(minutes=1), events["last"]["type"])
     else:
         # If camera is availeable
         # Sleep untill clip is done recording
@@ -220,7 +220,7 @@ def main():
 
         if not clipName:
             log_print("Did not find any clips")
-            esp32_shutdown(events["next"]["time"], events["last"]["name"])
+            esp32_shutdown(events["next"]["time"], events["last"]["type"])
             return
 
         log_print(f"Last clip was {clipName}")
@@ -237,7 +237,7 @@ def main():
         except Exception as E:
             log_print("something went wrong while uploading/deleting %s" % E)
 
-    esp32_shutdown(events["next"]["time"], events["last"]["name"])
+    esp32_shutdown(events["next"]["time"], events["last"]["type"])
     
 
 if __name__ == "__main__":
