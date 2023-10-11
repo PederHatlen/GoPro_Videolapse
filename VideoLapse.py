@@ -41,13 +41,14 @@ def log_print(data):
 
 def get_voltage(SHUNT_OHMS = 0.1, MAX_EXPECTED_AMPS = 0.2):
     # Voltage is gathered by a Adafruit INA219 Voltage sensor, using the pi-ina219 library
-    ina = INA219(SHUNT_OHMS, MAX_EXPECTED_AMPS)
-    ina.configure(ina.RANGE_16V)
-    return ina.voltage()
+    #ina = INA219(SHUNT_OHMS, MAX_EXPECTED_AMPS)
+    #ina.configure(ina.RANGE_16V)
+    #return ina.voltage()
+    return '0'
 
 def send_status(volt, temp, next_event, current_event_name):
     # Sending next event as a unix timestamp
-    try: requests.post(f"http://{logger_address}/status", json={"volt":volt, "temp":temp, "current_event_name":current_event_name, "next_event":next_event.isoformat()})
+    try: requests.post(f"http://{logger_address}/add", json={"volt":volt, "temp":temp, "current_event_name":current_event_name, "next_event":next_event.isoformat()})
     except: log_print("Could not send status")
 
 # Find the gopro cammera by sending requests
