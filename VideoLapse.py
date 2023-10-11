@@ -41,10 +41,13 @@ def log_print(data):
 
 def get_voltage(SHUNT_OHMS = 0.1, MAX_EXPECTED_AMPS = 0.2):
     # Voltage is gathered by a Adafruit INA219 Voltage sensor, using the pi-ina219 library
-    #ina = INA219(SHUNT_OHMS, MAX_EXPECTED_AMPS)
-    #ina.configure(ina.RANGE_16V)
-    #return ina.voltage()
-    return '0'
+    try:
+        ina = INA219(SHUNT_OHMS, MAX_EXPECTED_AMPS)
+        ina.configure(ina.RANGE_16V)
+        return ina.voltage()
+    except Exception as E:
+        log_print(f"Error ocured while trying to get voltage: {E} \nSending voltage = 0 instead")
+        return '0'
 
 def send_status(volt, temp, next_event, current_event_name):
     # Sending next event as a unix timestamp
