@@ -53,6 +53,11 @@ def write_gps_position():
         tries += 1    
 
 def get_gps_position():
+    if not os.path.exists('gps_position.json'):
+        with open('gps_position.json', 'w') as fp:
+            data = {"lat": STATIC_LATITUDE, "lng": STATIC_LONGITUDE, "dt": time.time()}
+            fp.write(json.dumps(data))
+            log_print("Wrote initial GPS location data based on static data from VideoLapse.py {STATIC_LATITUDE} {STATIC_LONGITUDE}")
     with open('gps_position.json') as fp:
         data = json.load(fp)
         time_since_last_update = round(time.time()-data["dt"])
