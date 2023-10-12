@@ -192,7 +192,7 @@ def event_times(lat, long):
     # on rise +1
     # on set -1
 
-    log_print("Fetching data from YR for location {lat} {long}")
+    log_print(f"Fetching data from YR for location {lat} {long}")
     yr_APIData = requests.get(f"https://www.yr.no/api/v0/locations/{lat},{long}/celestialevents").json()
     log_print("Got data from YR for location {lat} {long}")
     for event in yr_APIData["events"]:
@@ -276,7 +276,7 @@ def main():
         # Sleep untill clip is done recording
         try:
             log_print(f"Waiting for {clip_length//2} seconds before trying to access videos on GoPro")
-            time.sleep(clip_length)
+            time.sleep(clip_length/2)
         except KeyboardInterrupt:
             log_print("KeyboardInterrupt, skipping...")
 
