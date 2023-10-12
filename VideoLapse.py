@@ -4,7 +4,7 @@ Kode for å styre et GoPro Hero 11 Kamera for å ta en video på soloppgang, sol
 
 '''
 import os
-import requests, time, serial, dropbox
+import requests, time, serial, dropbox, json
 from astral import sun, Observer
 from datetime import datetime, timedelta, timezone
 from ina219 import INA219
@@ -26,7 +26,7 @@ def convert_to_decimal(coord, direction):
         decimal = -decimal 
     return decimal
 
-def get_gps_location():
+def write_gps_position():
     gps_serial = "/dev/serial/by-id/usb-SimTech__Incorporated_SimTech__Incorporated_0123456789ABCDEF-if05-port0"
     s = serial.Serial("%s" % gps_serial, baudrate=115200, timeout=3)
     s.write(b"AT\r\n")
@@ -44,11 +44,20 @@ def get_gps_location():
                 data_str = line.replace(b'+CGPSINFO: ', b'').decode('utf-8').strip().split(',')
                 lat = convert_to_decimal(data_str[0], data_str[1])
                 lng = convert_to_decimal(data_str[2], data_str[3])
-                return (lat, lng)
+                with open('gps_position.json', 'w') as fp:
+                    data = {"lat": lat, "lng": lng, "dt": time.time()}
+                    fp.write(json.dumps(data))
+                    log_print("Wrote new GPS location data!!! {lat} {lng}")
                 gps_location_found = True
                 break
         tries += 1    
-    return (STATIC_LATITUDE, STATIC_LONGITUDE)
+
+def get_gps_position():
+    with open('gps_position.json') as fp:
+        data = json.load(fp)
+        time_since_last_update = round(time.time()-data["dt"])
+        log_print(f'Fetched GPS info from file. Lat: {data["lat"]} Lng: {data["lng"]} Updated {time_since_last_update} seconds ago')
+        return (data["lat"], data["lng"])
 
 latitude, longitude = get_gps_location()
 
@@ -288,7 +297,7 @@ def main():
             log_print(f"Uploading took {uploadTime//60} minutes and {(uploadTime%60)} seconds")
         except Exception as E:
             log_print("something went wrong while uploading/deleting %s" % E)
-
+    write_gps_position()
     esp32_shutdown(events["next"]["time"], events["last"]["type"])
     
 
