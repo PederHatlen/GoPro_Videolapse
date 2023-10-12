@@ -78,7 +78,7 @@ def write_gps_position():
                     log_print("Wrote new GPS location data!!! {lat} {lng}")
                 gps_location_found = True
                 break
-        tries += 1    
+        tries += 1
 
 def get_gps_position():
     if not os.path.exists('gps_position.json'):
@@ -220,11 +220,11 @@ def event_times_local(lat, long):
 
     # Getting sun events for all events around a day (sunset yesterday, everything today and sunrise tomorrow)
     events = [
-        {"type":"Set", "time":sun.sunset(obs, now - day, tz)},
-        {"type":"Rise", "time":sun.sunrise(obs, now, tz)},
+        {"type":"Set", "time":sun.sunset(obs, now - day, tz)-timedelta(hours=1)},
+        {"type":"Rise", "time":sun.sunrise(obs, now, tz)+timedelta(hours=1)},
         {"type":"Noon", "time":sun.noon(obs, now, tz)},
-        {"type":"Set", "time":sun.sunset(obs, now, tz)},
-        {"type":"Rise", "time":sun.sunrise(obs, now + day, tz)}
+        {"type":"Set", "time":sun.sunset(obs, now, tz)-timedelta(hours=1)},
+        {"type":"Rise", "time":sun.sunrise(obs, now + day, tz)+timedelta(hours=1)}
     ]
 
     # Filtering the events with only the last and the next events
@@ -269,7 +269,7 @@ def main():
     if not find(clip_length, GoProIP):
         # If camera is not available
         log_print("cam was not found :(")
-        events = event_times(latitude, longitude)
+        events = event_times_local(latitude, longitude)
         if events["last"]["time"] > (datetime.now(tz)-timedelta(minutes=10)): esp32_shutdown(datetime.now(tz) + timedelta(minutes=1), events["last"]["type"])
     else:
         # If camera is availeable
@@ -283,7 +283,7 @@ def main():
         log_print("Done waiting")
 
         # Finding the event after it has pased for better distingtion
-        events = event_times(latitude, longitude)
+        events = event_times_local(latitude, longitude)
 
         clipName = get_last_clip(GoProIP)
         clipLink = f"http://{GoProIP}:8080/videos/DCIM/100GOPRO/{clipName}"
