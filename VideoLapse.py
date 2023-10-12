@@ -64,7 +64,7 @@ def get_gps_position():
         log_print(f'Fetched GPS info from file. Lat: {data["lat"]} Lng: {data["lng"]} Updated {time_since_last_update} seconds ago')
         return (data["lat"], data["lng"])
 
-latitude, longitude = get_gps_location()
+latitude, longitude = get_gps_position()
 
 
 # Sending events to a logging machine
