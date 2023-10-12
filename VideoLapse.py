@@ -275,12 +275,12 @@ def main():
         # If camera is availeable
         # Sleep untill clip is done recording
         try:
-            log_print(f"Waiting for {clip_length} seconds before trying to access videos on GoPro")
+            log_print(f"Waiting for {clip_length//2} seconds before trying to access videos on GoPro")
             time.sleep(clip_length)
         except KeyboardInterrupt:
             log_print("KeyboardInterrupt, skipping...")
 
-        log_print("Done sleeping")
+        log_print("Done waiting")
 
         # Finding the event after it has pased for better distingtion
         events = event_times(latitude, longitude)
