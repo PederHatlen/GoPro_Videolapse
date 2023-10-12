@@ -193,7 +193,7 @@ def event_times(lat, long):
     # on set -1
 
     yr_APIData = requests.get(f"https://www.yr.no/api/v0/locations/{lat},{long}/celestialevents").json()
-
+    log_print("Got data from YR for location {lat} {long}")
     for event in yr_APIData["events"]:
         if event["body"] != "Sun" or event["type"] not in neededEvents: continue
 
