@@ -11,8 +11,47 @@ from ina219 import INA219
 
 # Defs
 # Location
-latitude = 62.0075084
-longitude = 12.1801452
+STATIC_LATITUDE = 62.0075084
+STATIC_LONGITUDE = 12.1801452
+
+def convert_to_decimal(coord, direction):
+    # Split the input string into degrees and minutes
+    degree_length = 2 if direction in ['N', 'S'] else 3
+    degrees = float(coord[:degree_length])
+    minutes = float(coord[degree_length:])
+    # Convert to decimal format
+    decimal = degrees + (minutes / 60)
+    # Check the direction for south and west coordinates, which should be negative
+    if direction in ['S', 'W']:
+        decimal = -decimal 
+    return decimal
+
+def get_gps_location():
+    gps_serial = "/dev/serial/by-id/usb-SimTech__Incorporated_SimTech__Incorporated_0123456789ABCDEF-if05-port0"
+    s = serial.Serial("%s" % gps_serial, baudrate=115200, timeout=3)
+    s.write(b"AT\r\n")
+    s.write(b"AT+CGPS=1\r\n")
+    time.sleep(2)
+    gps_location_found = False
+    tries = 0
+    max_tries = 6
+    while tries < max_tries:
+        s.write(b"AT+CGPSINFO\r\n")
+        for line in s.readlines():
+            #print(line)
+            if line.startswith("+CGPSINFO".encode()) and ',,,,,,'.encode() not in line:
+                #print(line)
+                data_str = line.replace(b'+CGPSINFO: ', b'').decode('utf-8').strip().split(',')
+                lat = convert_to_decimal(data_str[0], data_str[1])
+                lng = convert_to_decimal(data_str[2], data_str[3])
+                return (lat, lng)
+                gps_location_found = True
+                break
+        tries += 1    
+    return (STATIC_LATITUDE, STATIC_LONGITUDE)
+
+latitude, longitude = get_gps_location()
+
 
 # Sending events to a logging machine
 do_debug_logging = True
