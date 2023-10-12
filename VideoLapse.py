@@ -12,17 +12,35 @@ from ina219 import INA219
 
 
 # Defs
+# Location
+STATIC_LATITUDE = 62.0075084
+STATIC_LONGITUDE = 12.1801452
+
+
+# Sending events to a logging machine
+do_debug_logging = True
+logger_address = "109.74.200.4:1338" # for testing
+
+# Addresses for devices
+GoProIP = "172.24.151.51"
+microController_serial = "/dev/ttyS0"
+
+# Dropbox
+dropbox_refresh_token = os.environ["DROPBOX_REFRESH_TOKEN"]
+dropbox_auth_key = os.environ["DROPBOX_AUTH_KEY"]
+
+clip_length = 30 # Seconds, Needs to be changed in gopro labs as well
+
+tz = datetime.now(timezone.utc).astimezone().tzinfo # Timezone used for dates
+
+temperature = int(open('/sys/class/thermal/thermal_zone0/temp').read())/1000 # Getting Temperature (raspberry is environment temperature right after boot)
+
 # Sending to the logger computer 
 def log_print(data):
     print(data)
     if do_debug_logging:
         try: requests.post(f"http://{logger_address}/add", json={"from":"RPI", "text":data})
         except: print("Could not send to log")
-
-
-# Location
-STATIC_LATITUDE = 62.0075084
-STATIC_LONGITUDE = 12.1801452
 
 def convert_to_decimal(coord, direction):
     # Split the input string into degrees and minutes
@@ -75,25 +93,6 @@ def get_gps_position():
         return (data["lat"], data["lng"])
 
 latitude, longitude = get_gps_position()
-
-
-# Sending events to a logging machine
-do_debug_logging = True
-logger_address = "109.74.200.4:1338" # for testing
-
-# Addresses for devices
-GoProIP = "172.24.151.51"
-microController_serial = "/dev/ttyS0"
-
-# Dropbox
-dropbox_refresh_token = os.environ["DROPBOX_REFRESH_TOKEN"]
-dropbox_auth_key = os.environ["DROPBOX_AUTH_KEY"]
-
-clip_length = 30 # Seconds, Needs to be changed in gopro labs as well
-
-tz = datetime.now(timezone.utc).astimezone().tzinfo # Timezone used for dates
-
-temperature = int(open('/sys/class/thermal/thermal_zone0/temp').read())/1000 # Getting Temperature (raspberry is environment temperature right after boot)
 
 
 def get_voltage(SHUNT_OHMS = 0.1, MAX_EXPECTED_AMPS = 0.2):
