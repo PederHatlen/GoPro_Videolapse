@@ -133,12 +133,21 @@ def event_times(lat, long):
     neededEvents = ["Rise", "ElevationMax", "Set"]
     last = {}
 
+    # on rise +1
+    # on set -1
+
     yr_APIData = requests.get(f"https://www.yr.no/api/v0/locations/{lat},{long}/celestialevents").json()
 
     for event in yr_APIData["events"]:
         if event["body"] != "Sun" or event["type"] not in neededEvents: continue
 
         eventTime = datetime.fromisoformat(event["time"]).replace(tzinfo=tz)
+
+        # Workaround because recording triggered too early/late
+        if event["type"] == "Rise":
+            eventTime = eventTime + timedelta(hours=1)
+        if event["type"] == "Set":
+            eventTime = eventTime - timedelta(hours=1)
         if datetime.now(tz) < eventTime:
             return {"last":last, "next":{"time":eventTime, "type":event["type"]}}
         else:
