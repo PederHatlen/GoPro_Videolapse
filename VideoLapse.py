@@ -9,7 +9,17 @@ from astral import sun, Observer
 from datetime import datetime, timedelta, timezone
 from ina219 import INA219
 
+
+
 # Defs
+# Sending to the logger computer 
+def log_print(data):
+    print(data)
+    if do_debug_logging:
+        try: requests.post(f"http://{logger_address}/add", json={"from":"RPI", "text":data})
+        except: print("Could not send to log")
+
+
 # Location
 STATIC_LATITUDE = 62.0075084
 STATIC_LONGITUDE = 12.1801452
@@ -85,12 +95,6 @@ tz = datetime.now(timezone.utc).astimezone().tzinfo # Timezone used for dates
 
 temperature = int(open('/sys/class/thermal/thermal_zone0/temp').read())/1000 # Getting Temperature (raspberry is environment temperature right after boot)
 
-# Sending to the logger computer 
-def log_print(data):
-    print(data)
-    if do_debug_logging:
-        try: requests.post(f"http://{logger_address}/add", json={"from":"RPI", "text":data})
-        except: print("Could not send to log")
 
 def get_voltage(SHUNT_OHMS = 0.1, MAX_EXPECTED_AMPS = 0.2):
     # Voltage is gathered by a Adafruit INA219 Voltage sensor, using the pi-ina219 library
