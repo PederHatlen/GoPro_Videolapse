@@ -10,7 +10,6 @@ body{
 
 header{
     background: #f80;
-    color: #222;
     padding: 0 20px;
     display: flex;
     align-items: center;
@@ -74,9 +73,9 @@ main{
     display: flex;
 }
 
-#status{
+#statusChart{
     grid-area: status;
-    padding: 20px;
+    width: 100%;
 }
 
 @media (orientation: portrait) {
@@ -87,5 +86,5 @@ main{
         gap: 1rem;
         grid-auto-flow: column;
     }
-    #status{width: calc(100vmin - 3rem)}
+    /* #status{width: calc(100vmin - 3rem)} */
 }

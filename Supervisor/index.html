@@ -3,21 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Supervisor</title>
+    <title>Nasjonalpark logger</title>
     <link rel="stylesheet" href="css/style.css">
+    <link rel="shortcut icon" href="img/favicon.ico" type="image/x-icon">
 </head>
 <body>
-    <header><h1>NRKbeta - Nasjonalpark</h1></header>
+    <header><h1><img src="img/nrkbeta-logo.svg" alt="NRKbeta">Nasjonalpark logger</h1></header>
     <main>
         <div id="logs"></div>
         <div id="timer">
-            <div class="container" id="countdownContainer"><span>Tid til neste opptak</span><h2 id="countdown">00:00:00</h2></div>
+            <div class="container" id="countdownContainer"><span id="countdownInfotext">Tid til neste opptak</span><h2 id="countdown">00:00:00</h2></div>
             <div class="container" id="nextEventContainer"><span>Neste opptak vil skje klokken&nbsp;<span id="eventTime">00:00:00</span></span></div>
         </div>
-        <div id="status"><canvas id="statChart"></canvas></div>
+        <div id="statusChart"></div>
     </main>
     <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
     <script src="./js/script.js"></script>
 </body>
 </html>

@@ -1,40 +1,37 @@
+google.charts.load('current', {'packages':['corechart']});
+
 var socket = io();
 
 let logContainer = document.getElementById("logs");
 let timerContainer = document.getElementById("timer");
-let statusContainer = document.getElementById("status");
-
+let statusContainer = document.getElementById("statusChart");
 let countdownEl = document.getElementById("countdown");
 let eventTimeEl = document.getElementById("eventTime");
+
+let countdownInfoTextEl = document.getElementById("countdownInfotext");
 
 let nextEvent = new Date();
 
 let countdownTimer;
 
-const statChartEl = document.getElementById('statChart').getContext("2d");
-// const tempChartEl = document.getElementById('tempChart').getContext("2d");
-
-// tempChartEl.canvas.width = 300;
-// tempChartEl.canvas.height = 300;
-
-// voltChartEl.canvas.width = 300;
-// voltChartEl.canvas.height = 300;
-
-let statChart = new Chart(statChartEl, {
-    type: 'line',
-    data: {
-        labels: [],
-        datasets: [
-            {label: 'Spening (Volt), på batteriet', borderColor: '#0d0',data:[]},
-            {label: 'Temperatur', borderColor: '#09f', data:[]}
-        ],
-    },
-    options:{responsive: true, maintainAspectRatio: false,}
-});
+let chartData = [];
+var chartOptions = {
+    title: 'Spenning (Volt) av batteri og temperatur under boot.',
+    colors: ['#09f', '#0d0'],
+    legend: {position: 'top'},
+    // series: {0: {targetAxisIndex: 0},1: {targetAxisIndex: 1}},
+    // vAxes: {0: {title: 'Temperatur'},1: {title: 'Volt'}},
+};
 
 function time_renderer(){
-    let timeLeft = new Date(nextEvent-Date.now());
-    countdownEl.innerHTML = `${("00"+timeLeft.getHours()).slice(-2)} timer, ${("00"+timeLeft.getMinutes()).slice(-2)} min og ${("00"+timeLeft.getSeconds()).slice(-2)} sek`
+    let timeLeft = Math.round(nextEvent.getTime()/1000 - (new Date().getTime()/1000));
+
+    if (timeLeft < 0){
+        timeLeft = Math.abs(timeLeft);
+        countdownInfoTextEl.innerHTML = "Tid siden opptak skulle skjedd (Overtid)";
+    }else countdownInfoTextEl.innerHTML = "Tid til neste opptak";
+
+    countdownEl.innerHTML = `${("00"+Math.floor(timeLeft/3600)).slice(-2)} timer, ${("00"+Math.floor(timeLeft/60)).slice(-2)} min og ${("00"+timeLeft%60).slice(-2)} sek`
     eventTimeEl.innerHTML = `${("00"+nextEvent.getHours()).slice(-2)}:${("00"+nextEvent.getMinutes()).slice(-2)}:${("00"+nextEvent.getSeconds()).slice(-2)}`
 }
 
@@ -45,37 +42,33 @@ function log_renderer(data){
 
     let el = document.createElement("p");
     el.innerHTML = `[${("00"+time.getDate()).slice(-2)}/${("00"+time.getMonth()).slice(-2)} ${("00"+time.getHours()).slice(-2)}:${("00"+time.getMinutes()).slice(-2)}:${("00"+time.getSeconds()).slice(-2)}]&emsp;${data["text"]}`;
-
+    
     let doScroll = (logContainer.scrollTopMax == logContainer.scrollTop);
 
     logContainer.appendChild(el);
 
     if(doScroll) el.scrollIntoView();
 }
-function stat_renderer(data){
-    if(!("volt" in data) || !("temp" in data) || !("next_event" in data) || !("current_event_name" in data) || !("time" in data)) return false;
 
-    let time = new Date(Date.parse(data["time"]));
+function drawChart(newData = null) {
+    if(newData != null && ["volt", "temp", "next_event", "current_event_name"].every(k => k in newData)){
+        let time = new Date(Date.parse(newData["time"]));
+        chartData.push([`Sun${newData["current_event_name"].toLowerCase()} ${time.getDate()}/${time.getMonth()}`, newData["temp"], newData["volt"]]);
+        if(chartData.length > 21) chartData.shift();
 
-    statChart.data.datasets[0]["data"].push(data["volt"]);
-    statChart.data.datasets[1]["data"].push(data["temp"]);
-    statChart.data.labels.push(`Sun${data["current_event_name"].toLowerCase()} ${time.getDate()}/${time.getMonth()}`);
-
-    if(statChart.data.labels.length > 21){
-        statChart.data.datasets[0]["data"].shift();
-        statChart.data.datasets[1]["data"].shift();
-        statChart.data.labels.shift();
+        nextEvent = new Date(newData["next_event"]);
     }
 
-    statChart.update();
-
-    nextEvent = new Date(data["next_event"]);
+    var data = google.visualization.arrayToDataTable([['Time', 'Temp', 'Voltage'], ...chartData]);
+    var chart = new google.visualization.LineChart(statusContainer);
+    chart.draw(data, chartOptions);
 }
 
-
+// socket.io world
 socket.on('connect', ()=>{
-    console.log("CONNECTED!!!!!!");
+    console.log("CONNECTED!");
     socket.emit('connected');
+    chartData = [];
 });
 socket.on('prev_logs', (data)=>{
     for (let message of data) {
@@ -86,10 +79,10 @@ socket.on('prev_logs', (data)=>{
 socket.on('prev_status', (data)=>{
     for (let message of data) {
         console.log(message);
-        stat_renderer(message);
+        drawChart(message);
     }
-    countdownTimer = setInterval(time_renderer, 0.5);
+    countdownTimer = setInterval(time_renderer, 250);
 });
 
 socket.on('log', log_renderer);
-socket.on('status', stat_renderer);
+socket.on('status', drawChart);

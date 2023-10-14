@@ -34,7 +34,7 @@ def index(): return send_file("./index.html")
 
 @app.route('/<folder>/<path:path>')
 def send_allowed(folder, path):
-    if folder in ["images", "js", "css"]: return send_from_directory(folder, path)
+    if folder in ["img", "js", "css"]: return send_from_directory(folder, path)
     abort(404)
 
 @app.route("/log", methods=["POST"])
