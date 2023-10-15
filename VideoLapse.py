@@ -24,7 +24,7 @@ STATIC_LONGITUDE = 12.1801452
 
 # Sending events to a logging machine
 do_debug_logging = True
-logger_address = "109.74.200.4:1338" # for testing
+logger_address = "dev.nrkalpha.com:2448" # for testing
 
 # Addresses for devices
 GoProIP = "172.24.151.51"
@@ -44,8 +44,13 @@ temperature = int(open('/sys/class/thermal/thermal_zone0/temp').read())/1000 # G
 def log_print(data):
     print(data)
     if do_debug_logging:
-        try: requests.post(f"http://{logger_address}/add", json={"from":"RPI", "text":data})
+        try: requests.post(f"http://{logger_address}/log", json={"from":"RPI", "text":data})
         except: print("Could not send to log")
+
+def send_status(volt, temp, next_event, current_event_name):
+    # Sending next event as a unix timestamp
+    try: requests.post(f"http://{logger_address}/status", json={"volt":volt, "temp":temp, "current_event_name":current_event_name, "next_event":next_event.isoformat()})
+    except: log_print("Could not send status")
 
 def convert_to_decimal(coord, direction):
     # Split the input string into degrees and minutes
@@ -106,11 +111,6 @@ def get_voltage(SHUNT_OHMS = 0.1, MAX_EXPECTED_AMPS = 0.2):
     except Exception as E:
         log_print(f"Error ocured while trying to get voltage: {E} \nSending voltage = 0 instead")
         return '0'
-
-def send_status(volt, temp, next_event, current_event_name):
-    # Sending next event as a unix timestamp
-    try: requests.post(f"http://{logger_address}/add", json={"volt":volt, "temp":temp, "current_event_name":current_event_name, "next_event":next_event.isoformat()})
-    except: log_print("Could not send status")
 
 # Find the gopro cammera by sending requests
 def find(timeout, GoProIP):
