@@ -77,7 +77,7 @@ def on_connection():
     emit("prev_status", status_log[-21:])
 
 def main():
-    socketio.run(app=app, host="0.0.0.0", port="1337")
+    socketio.run(app=app, port="1337")
 
 
 if __name__ == '__main__':
