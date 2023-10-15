@@ -86,5 +86,5 @@ if __name__ == '__main__':
         except KeyboardInterrupt:
             print("Keyboard interupt")
             exit()
-        except: print("Program failed, restarting...")
+        # except: print("Program failed, restarting...")
         time.sleep(2)
