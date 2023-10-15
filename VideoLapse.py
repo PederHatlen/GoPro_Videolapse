@@ -232,7 +232,8 @@ def event_times_local(lat, long):
     # Filtering the events with only the last and the next events
     last = {}
     for e in events:
-        if now < e["time"]: return {"last":last, "next":e}
+        # Adding an hour to current time if fired before real event-time
+        if (now + timedelta(hours=1)) < e["time"]: return {"last":last, "next":e}
         else: last = e
 
     return False
@@ -305,7 +306,7 @@ def main():
             delete_clip(GoProIP, clipName)
             #delete_all_clips(GoProIP)
             uploadTime = (datetime.now(tz)-now).total_seconds()
-            log_print(f"Uploading took {uploadTime//60} minutes and {(uploadTime%60)} seconds")
+            log_print(f"Uploading took {uploadTime//60} minutes and {round(uploadTime%60)} seconds (total seconds was: {uploadTime})")
         except Exception as E:
             log_print("something went wrong while uploading/deleting %s" % E)
     write_gps_position()
