@@ -13,6 +13,7 @@ gps_serial = "/dev/serial/by-id/usb-SimTech__Incorporated_SimTech__Incorporated_
 s = serial.Serial("%s" % gps_serial, baudrate=115200, timeout=3)
 s.write(b"AT\r\n")
 s.write(b"AT+CGPS=1\r\n")
+s.readlines()
 s.close()
 
 
@@ -75,7 +76,7 @@ def write_gps_position():
         for line in s.readlines():
             #print(line)
             if line.startswith("+CGPSINFO".encode()):
-                log_print("Found CGPSINFO line: {line}")
+                log_print(f"Found CGPSINFO line: {line}")
             if line.startswith("+CGPSINFO".encode()) and ',,,,,,'.encode() not in line:
                 #print(line)
                 data_str = line.replace(b'+CGPSINFO: ', b'').decode('utf-8').strip().split(',')
