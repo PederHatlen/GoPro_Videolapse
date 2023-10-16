@@ -31,8 +31,8 @@ function time_renderer(){
         countdownInfoTextEl.innerHTML = "Tid siden opptak skulle skjedd (Overtid)";
     }else countdownInfoTextEl.innerHTML = "Tid til neste opptak";
 
-    countdownEl.innerHTML = `${("00"+Math.floor(timeLeft/3600)).slice(-2)} timer, ${("00"+Math.floor(timeLeft/60)).slice(-2)} min og ${("00"+timeLeft%60).slice(-2)} sek`
-    eventTimeEl.innerHTML = `${("00"+nextEvent.getHours()).slice(-2)}:${("00"+nextEvent.getMinutes()).slice(-2)}:${("00"+nextEvent.getSeconds()).slice(-2)}`
+    countdownEl.innerHTML = `${Math.floor(timeLeft/3600)} time${Math.floor(timeLeft/3600) == 1? "":"r"}, ${Math.floor((timeLeft%3600) / 60)} min og ${timeLeft%60} sek`;
+    eventTimeEl.innerHTML = `${("00"+nextEvent.getHours()).slice(-2)}:${("00"+nextEvent.getMinutes()).slice(-2)}:${("00"+nextEvent.getSeconds()).slice(-2)}`;
 }
 
 function log_renderer(data){
