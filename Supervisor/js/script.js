@@ -42,12 +42,9 @@ function log_renderer(data){
 
     let el = document.createElement("p");
     el.innerHTML = `[${("00"+time.getDate()).slice(-2)}/${("00"+time.getMonth()).slice(-2)} ${("00"+time.getHours()).slice(-2)}:${("00"+time.getMinutes()).slice(-2)}:${("00"+time.getSeconds()).slice(-2)}]&emsp;${data["text"]}`;
-    
-    let doScroll = (logContainer.scrollTopMax == logContainer.scrollTop);
 
-    logContainer.appendChild(el);
-
-    if(doScroll) el.scrollIntoView();
+    logContainer.prepend(el);
+    if(logContainer.childElementCount >= 100) logContainer.removeChild(logContainer.lastChild);
 }
 
 function drawChart(newData = null) {
@@ -70,15 +67,14 @@ socket.on('connect', ()=>{
     socket.emit('connected');
     chartData = [];
 });
-socket.on('prev_logs', (data)=>{
+socket.on('prev_logs', (rawData)=>{
+    let data = rawData.slice(Math.max(rawData.length - 100, 0))
     for (let message of data) {
-        console.log(message);
         log_renderer(message);
     }
 });
 socket.on('prev_status', (data)=>{
     for (let message of data) {
-        console.log(message);
         drawChart(message);
     }
     countdownTimer = setInterval(time_renderer, 250);
