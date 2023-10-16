@@ -71,7 +71,8 @@ def write_gps_position():
     gps_location_found = False
     tries = 0
     max_tries = 20
-    while tries < max_tries or gps_location_found:
+    while tries < max_tries:
+        if gps_location_found: break
         s.write(b"AT+CGPSINFO\r\n")
         for line in s.readlines():
             #print(line)
