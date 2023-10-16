@@ -71,7 +71,7 @@ def write_gps_position():
     gps_location_found = False
     tries = 0
     max_tries = 20
-    while tries < max_tries:
+    while tries < max_tries or gps_location_found:
         s.write(b"AT+CGPSINFO\r\n")
         for line in s.readlines():
             #print(line)
@@ -85,7 +85,7 @@ def write_gps_position():
                 with open('gps_position.json', 'w') as fp:
                     data = {"lat": lat, "lng": lng, "dt": time.time()}
                     fp.write(json.dumps(data))
-                    log_print("Wrote new GPS location data!!! {lat} {lng}")
+                    log_print(f"Wrote new GPS location data!!! {lat} {lng}")
                 gps_location_found = True
                 break
         tries += 1
