@@ -69,7 +69,7 @@ def write_gps_position():
     s = serial.Serial("%s" % gps_serial, baudrate=115200, timeout=3)
     gps_location_found = False
     tries = 0
-    max_tries = 12
+    max_tries = 20
     while tries < max_tries:
         s.write(b"AT+CGPSINFO\r\n")
         for line in s.readlines():
@@ -307,9 +307,9 @@ def main():
             #delete_all_clips(GoProIP)
             uploadTime = (datetime.now(tz)-now).total_seconds()
             log_print(f"Uploading took {uploadTime//60} minutes and {round(uploadTime%60)} seconds (total seconds was: {uploadTime})")
+            write_gps_position()
         except Exception as E:
             log_print("something went wrong while uploading/deleting %s" % E)
-    write_gps_position()
     esp32_shutdown(events["next"]["time"], events["last"]["type"])
     
 
