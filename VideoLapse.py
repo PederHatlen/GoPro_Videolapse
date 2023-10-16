@@ -74,6 +74,8 @@ def write_gps_position():
         s.write(b"AT+CGPSINFO\r\n")
         for line in s.readlines():
             #print(line)
+            if line.startswith("+CGPSINFO".encode()):
+                log_print("Found CGPSINFO line: {line}")
             if line.startswith("+CGPSINFO".encode()) and ',,,,,,'.encode() not in line:
                 #print(line)
                 data_str = line.replace(b'+CGPSINFO: ', b'').decode('utf-8').strip().split(',')
