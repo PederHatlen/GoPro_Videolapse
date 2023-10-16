@@ -87,6 +87,7 @@ def write_gps_position():
                     data = {"lat": lat, "lng": lng, "dt": time.time()}
                     fp.write(json.dumps(data))
                     log_print(f"Wrote new GPS location data!!! {lat} {lng}")
+                    return True
                 gps_location_found = True
                 break
         tries += 1
