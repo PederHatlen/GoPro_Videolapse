@@ -260,7 +260,7 @@ def esp32_shutdown(eventTime, current_event_name):
 
     # next event time - time now - half clip time = seconds untill next clip should start
     secondsUntillWakeup = abs(round((eventTime - datetime.now(tz)).total_seconds()) - (clip_length/2))
-    log_print(f"Seconds untill next wakeup: {secondsUntillWakeup}")
+    log_print(f"Seconds untill next wakeup: {secondsUntillWakeup}, at {eventTime.isoformat()}")
 
     log_print("Sending sleep command to stamp")
     ser.write(f"Sleep for {secondsUntillWakeup} seconds\n".encode('ascii'))
