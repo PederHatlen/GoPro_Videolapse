@@ -6,6 +6,8 @@ from flask_socketio import SocketIO, emit
 message_log = []
 status_log = []
 
+tz = datetime.now(timezone.utc).astimezone().tzinfo # Timezone used for dates
+
 os.makedirs("data", exist_ok=True)
 
 logmessages_file = "data/messageLog.json"
@@ -42,7 +44,7 @@ def add_to_log():
     data = request.get_json()
 
     if "text" not in data: abort(406)
-    processed = {"text":data["text"], "time":datetime.now().isoformat()}
+    processed = {"text":data["text"], "time":datetime.now(tz).isoformat()}
 
     print(data, processed)
     # print(f"[From: {data['from']}] {data['text']}")
@@ -61,7 +63,7 @@ def status():
 
     print(f"Battery voltage is {data['volt']}V, temperature is {data['temp']} and next event is at unix-epoc {data['next_event']}")
 
-    processed = {"volt":data["volt"], "temp":data["temp"], "current_event_name":data["current_event_name"], "next_event":data["next_event"], "time":datetime.now().isoformat()}
+    processed = {"volt":data["volt"], "temp":data["temp"], "current_event_name":data["current_event_name"], "next_event":data["next_event"], "time":datetime.now(tz).isoformat()}
     socketio.emit("status", processed)
     status_log.append(processed)
     with open(statuslog_file, 'w') as f: json.dump(status_log, f)
