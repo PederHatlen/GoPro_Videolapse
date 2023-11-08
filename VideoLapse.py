@@ -306,7 +306,7 @@ def main():
 
         now = datetime.now(tz)
 
-        if events['last']['type'] == "Noon":
+        if events['last']['type'] == "Noon" or True:
 
 
             try:
