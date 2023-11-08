@@ -306,9 +306,7 @@ def main():
 
         now = datetime.now(tz)
 
-        if events['last']['type'] == "Noon" or True:
-
-
+        if events['last']['type'] == "Noon":
             try:
                 log_print("Trying to upload to dropbox")
                 stream_dropbox(clipLink, f"{clipName}_{datetime.strftime(events['last']['time'], '%y-%m-%d_%H-%M-%S')}_Sun{events['last']['type']}.mp4")
