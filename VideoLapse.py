@@ -304,20 +304,23 @@ def main():
 
         log_print(f"Last clip was {clipName}")
 
-        log_print(f"Skipping upload of file")
+        now = datetime.now(tz)
 
-        # now = datetime.now(tz)
+        if events['last']['type'] == "Noon":
 
-        # try:
-        #     log_print("Trying to upload to dropbox")
-        #     stream_dropbox(clipLink, f"{clipName}_{datetime.strftime(events['last']['time'], '%y-%m-%d_%H-%M-%S')}_Sun{events['last']['type']}.mp4")
-        #     delete_clip(GoProIP, clipName)
-        #     #delete_all_clips(GoProIP)
-        #     uploadTime = (datetime.now(tz)-now).total_seconds()
-        #     log_print(f"Uploading took {uploadTime//60} minutes and {round(uploadTime%60)} seconds (total seconds was: {uploadTime})")
-        # except Exception as E:
-        #     log_print("something went wrong while uploading/deleting %s" % E)
-        
+
+            try:
+                log_print("Trying to upload to dropbox")
+                stream_dropbox(clipLink, f"{clipName}_{datetime.strftime(events['last']['time'], '%y-%m-%d_%H-%M-%S')}_Sun{events['last']['type']}.mp4")
+                # delete_clip(GoProIP, clipName)
+                #delete_all_clips(GoProIP)
+                uploadTime = (datetime.now(tz)-now).total_seconds()
+                log_print(f"Uploading took {uploadTime//60} minutes and {round(uploadTime%60)} seconds (total seconds was: {uploadTime})")
+            except Exception as E:
+                log_print("something went wrong while uploading/deleting %s" % E)
+        else:
+            log_print(f"Skipping upload of file (only uploading Noon)")
+
         write_gps_position()
         
     esp32_shutdown(events["next"]["time"], events["last"]["type"])
