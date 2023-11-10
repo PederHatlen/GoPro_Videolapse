@@ -149,14 +149,18 @@ def stream_dropbox(clipLink, name=""):
         # Uploading chunk by chunk from datastream
         with requests.get(clipLink, stream=True) as r:
             log_print(f"Informasjon om videoklipp: {r.headers}")
-            c_length = int(r.headers['Content-Length'])
+            c_length = False
+            if 'Content-Length' in r.headers:
+                c_length = int(r.headers['Content-Length'])
+            else:
+                log_print("Did not get total length, uploading anyway...")
             chunks = 0
             for chunk in r.iter_content(chunk_size=4*1024*1024):
                 if chunk: 
                     dbx.files_upload_session_append_v2(chunk, cursor)
                     cursor.offset += len(chunk)
                     chunks += 1
-                    log_print(f"Uploading chunk {chunks}, {round((cursor.offset/c_length)*100, 2)}%")
+                    log_print(f"Uploading chunk {chunks}, {round((cursor.offset/c_length)*100, 2) if c_length != False else 'n/a'}%")
         
         clipName = clipLink.split("/")[-1]
         localname = (name if name != '' else clipName)
