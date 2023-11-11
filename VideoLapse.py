@@ -179,10 +179,10 @@ def get_last_clip(GoProIP):
     # log_print(requests.get("http://172.24.151.51:8080/gopro/media/list").text)
     # time.sleep(20)
     mediaList = requests.get(f"http://{GoProIP}:8080/gopro/media/list").json()["media"]
-    if mediaList == []: return False
+    if mediaList == []: return False, False
     log_print(f"GoPro currently has {len(mediaList[0]['fs'])} clips")
 
-    return mediaList[0]["fs"][-1]["n"]
+    return mediaList[0]["fs"][-1]["n"], f"http://{GoProIP}:8080/videos/DCIM/{mediaList[0]['d']}/{mediaList[0]['fs'][-1]['n']}"
 
 # Delete a clip from gopro
 def delete_clip(GoProIP, clipName):
@@ -305,8 +305,8 @@ def main():
         # Finding the event after it has pased for better distingtion
         events = event_times_local(latitude, longitude)
 
-        clipName = get_last_clip(GoProIP)
-        clipLink = f"http://{GoProIP}:8080/videos/DCIM/100GOPRO/{clipName}"
+        clipName, clipLink = get_last_clip(GoProIP)
+        # clipLink = f"http://{GoProIP}:8080/videos/DCIM/101GOPRO/{clipName}"
 
         if not clipName:
             log_print("Did not find any clips")
