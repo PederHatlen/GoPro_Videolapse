@@ -238,6 +238,13 @@ def event_times_local(lat, long):
         {"type":"Set", "time":sun.sunset(obs, now, tz)-timedelta(hours=1)},
         {"type":"Rise", "time":sun.sunrise(obs, now + day, tz)+timedelta(hours=1)}
     ]
+    try:
+        event_printeable = []
+        for i in events:
+            event_printeable.append({"type":i["type"], "time":i["time"].isoformat()})
+        log_print(f"All events evalueated: {event_printeable}")
+    except:
+        log_print(f"All events evalueated: {events}")
 
     # Filtering the events with only the last and the next events
     last = {}
