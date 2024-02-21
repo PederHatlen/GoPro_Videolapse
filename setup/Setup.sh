@@ -1,7 +1,7 @@
 #! /bin/sh
 
 sudo apt update
-sudo apt -y install python3.9 libpython3.9-dev python3-pip tmux
+sudo apt -y install python3 libpython3-dev python3-pip tmux
 
 curl -fsSL https://tailscale.com/install.sh | sh
 
