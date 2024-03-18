@@ -50,7 +50,7 @@ function log_renderer(data){
 function drawChart(newData = null) {
     if(newData != null && ["volt", "temp", "next_event", "current_event_name"].every(k => k in newData)){
         let time = new Date(Date.parse(newData["time"]));
-        chartData.push([`Sun${newData["current_event_name"].toLowerCase()} ${time.getDate()}/${time.getMonth()}`, newData["temp"], newData["volt"]]);
+        chartData.push([`Sun${newData["current_event_name"].toLowerCase()} ${time.getDate()}/${time.getMonth()+1}`, newData["temp"], newData["volt"]]);
         if(chartData.length > 21) chartData.shift();
 
         nextEvent = new Date(newData["next_event"]);
