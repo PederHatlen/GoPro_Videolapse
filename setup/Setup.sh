@@ -20,8 +20,8 @@ sudo systemctl enable VideoLapse.service
 read -p "Dropbox refresh token: " dropbox_refresh_token
 read -p "Dropbox auth key: " dropbox_auth_key
 
-sudo echo "export DROPBOX_REFRESH_TOKEN=" >> "/etc/profile"
-sudo echo "export DROPBOX_AUTH_KEY=" >> "/etc/profile"
+sudo echo "export DROPBOX_REFRESH_TOKEN=$dropbox_refresh_token" >> "/etc/profile"
+sudo echo "export DROPBOX_AUTH_KEY=$dropbox_auth_key" >> "/etc/profile"
 
 sudo tailscale up
 
