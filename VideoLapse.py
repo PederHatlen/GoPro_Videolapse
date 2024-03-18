@@ -9,12 +9,12 @@ from astral import sun, Observer
 from datetime import datetime, timedelta, timezone
 from ina219 import INA219
 
-gps_serial = "/dev/serial/by-id/usb-SimTech__Incorporated_SimTech__Incorporated_0123456789ABCDEF-if05-port0"
-s = serial.Serial("%s" % gps_serial, baudrate=115200, timeout=3)
-s.write(b"AT\r\n")
-s.write(b"AT+CGPS=1\r\n")
-s.readlines()
-s.close()
+# gps_serial = "/dev/serial/by-id/usb-SimTech__Incorporated_SimTech__Incorporated_0123456789ABCDEF-if05-port0"
+# s = serial.Serial("%s" % gps_serial, baudrate=115200, timeout=3)
+# s.write(b"AT\r\n")
+# s.write(b"AT+CGPS=1\r\n")
+# s.readlines()
+# s.close()
 
 
 # Defs
@@ -68,16 +68,11 @@ def convert_to_decimal(coord, direction):
 def write_gps_position():
     gps_serial = "/dev/serial/by-id/usb-SimTech__Incorporated_SimTech__Incorporated_0123456789ABCDEF-if05-port0"
     s = serial.Serial("%s" % gps_serial, baudrate=115200, timeout=3)
-    gps_location_found = False
     tries = 0
     max_tries = 20
     while tries < max_tries:
-        if gps_location_found: break
         s.write(b"AT+CGPSINFO\r\n")
         for line in s.readlines():
-            #print(line)
-            if line.startswith("+CGPSINFO".encode()):
-                log_print(f"Found CGPSINFO line: {line}")
             if line.startswith("+CGPSINFO".encode()) and ',,,,,,'.encode() not in line:
                 #print(line)
                 data_str = line.replace(b'+CGPSINFO: ', b'').decode('utf-8').strip().split(',')
@@ -86,11 +81,12 @@ def write_gps_position():
                 with open('gps_position.json', 'w') as fp:
                     data = {"lat": lat, "lng": lng, "dt": time.time()}
                     fp.write(json.dumps(data))
-                    log_print(f"Wrote new GPS location data!!! {lat} {lng}")
-                    return True
-                gps_location_found = True
-                break
+                log_print(f"Wrote new GPS location data!!! {lat} {lng}")
+                return True
+            else:
+                log_print(f"Did not get GPS data, retrying...")
         tries += 1
+    log_print("Did not get new GPS data :(")
 
 def get_gps_position():
     if not os.path.exists('gps_position.json'):
