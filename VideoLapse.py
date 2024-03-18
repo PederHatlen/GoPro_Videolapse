@@ -9,19 +9,10 @@ from astral import sun, Observer
 from datetime import datetime, timedelta, timezone
 from ina219 import INA219
 
-gps_serial = "/dev/ttyUSB2"
-# s = serial.Serial("%s" % gps_serial, baudrate=115200, timeout=3)
-# s.write(b"AT\r\n")
-# s.write(b"AT+CGPS=1\r\n")
-# s.readlines()
-# s.close()
-
-
 # Defs
 # Location
 STATIC_LATITUDE = 62.0075084
 STATIC_LONGITUDE = 12.1801452
-
 
 # Sending events to a logging machine
 do_debug_logging = True
@@ -30,6 +21,7 @@ logger_address = "dev.nrkalpha.com:2448" # for testing
 # Addresses for devices
 GoProIP = "172.24.151.51"
 microController_serial = "/dev/ttyS0"
+gps_serial = "/dev/ttyUSB2"
 
 # Dropbox
 dropbox_refresh_token = os.environ["DROPBOX_REFRESH_TOKEN"]
@@ -65,30 +57,6 @@ def convert_to_decimal(coord, direction):
         decimal = -decimal 
     return decimal
 
-def write_gps_position():
-    s = serial.Serial("%s" % gps_serial, baudrate=115200, timeout=3)
-    s.write(b"AT+CGPS=1\r\n")
-    s.readlines()
-    tries = 0
-    max_tries = 20
-    while tries < max_tries:
-        s.write(b"AT+CGPSINFO\r\n")
-        for line in s.readlines():
-            if line.startswith("+CGPSINFO".encode()) and ',,,,,,'.encode() not in line:
-                #print(line)
-                data_str = line.replace(b'+CGPSINFO: ', b'').decode('utf-8').strip().split(',')
-                lat = convert_to_decimal(data_str[0], data_str[1])
-                lng = convert_to_decimal(data_str[2], data_str[3])
-                with open('gps_position.json', 'w') as fp:
-                    data = {"lat": lat, "lng": lng, "dt": time.time()}
-                    fp.write(json.dumps(data))
-                log_print(f"Wrote new GPS location data!!! {lat} {lng}")
-                return True
-            else:
-                log_print(f"Did not get GPS data, retrying...")
-        tries += 1
-    log_print("Did not get new GPS data :(")
-
 def get_gps_position():
     if not os.path.exists('gps_position.json'):
         with open('gps_position.json', 'w') as fp:
@@ -101,8 +69,29 @@ def get_gps_position():
         log_print(f'Fetched GPS info from file. Lat: {data["lat"]} Lng: {data["lng"]} Updated {time_since_last_update} seconds ago')
         return (data["lat"], data["lng"])
 
-latitude, longitude = get_gps_position()
-
+def write_gps_position():
+    s = serial.Serial("%s" % gps_serial, baudrate=115200, timeout=3)
+    s.write(b"AT+CGPS=1\r\n")
+    s.readlines()
+    tries = 0
+    max_tries = 20
+    while tries < max_tries:
+        s.write(b"AT+CGPSINFO\r\n")
+        for line in s.readlines():
+            if line.startswith("+CGPSINFO".encode()) and ',,,,,,'.encode() not in line:
+                data_str = line.replace(b'+CGPSINFO: ', b'').decode('utf-8').strip().split(',')
+                lat = convert_to_decimal(data_str[0], data_str[1])
+                lng = convert_to_decimal(data_str[2], data_str[3])
+                with open('gps_position.json', 'w') as fp:
+                    data = {"lat": lat, "lng": lng, "dt": time.time()}
+                    fp.write(json.dumps(data))
+                log_print(f"Wrote new GPS location data!!! {lat} {lng}")
+                return (lat, lng)
+            else:
+                log_print(f"Did not get GPS data, retrying...")
+        tries += 1
+    log_print("Did not get new GPS data :(")
+    return get_gps_position()
 
 def get_voltage(SHUNT_OHMS = 0.1, MAX_EXPECTED_AMPS = 0.2):
     # Voltage is gathered by a Adafruit INA219 Voltage sensor, using the pi-ina219 library
@@ -286,6 +275,7 @@ def main():
     if not find(clip_length, GoProIP):
         # If camera is not available
         log_print("cam was not found :(")
+        latitude, longitude = write_gps_position()
         events = event_times_local(latitude, longitude)
         if events["last"]["time"] > (datetime.now(tz)-timedelta(minutes=10)): esp32_shutdown(datetime.now(tz) + timedelta(minutes=1), events["last"]["type"])
     else:
@@ -300,6 +290,7 @@ def main():
         log_print("Done waiting")
 
         # Finding the event after it has pased for better distingtion
+        latitude, longitude = write_gps_position()
         events = event_times_local(latitude, longitude)
 
         clipName, clipLink = get_last_clip(GoProIP)
@@ -326,8 +317,6 @@ def main():
                 log_print("something went wrong while uploading/deleting %s" % E)
         else:
             log_print(f"Skipping upload of file (only uploading Noon)")
-
-        write_gps_position()
         
     esp32_shutdown(events["next"]["time"], events["last"]["type"])
     
