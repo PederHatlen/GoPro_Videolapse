@@ -9,7 +9,7 @@ from astral import sun, Observer
 from datetime import datetime, timedelta, timezone
 from ina219 import INA219
 
-# gps_serial = "/dev/serial/by-id/usb-SimTech__Incorporated_SimTech__Incorporated_0123456789ABCDEF-if05-port0"
+gps_serial = "/dev/ttyUSB2"
 # s = serial.Serial("%s" % gps_serial, baudrate=115200, timeout=3)
 # s.write(b"AT\r\n")
 # s.write(b"AT+CGPS=1\r\n")
@@ -66,8 +66,9 @@ def convert_to_decimal(coord, direction):
     return decimal
 
 def write_gps_position():
-    gps_serial = "/dev/serial/by-id/usb-SimTech__Incorporated_SimTech__Incorporated_0123456789ABCDEF-if05-port0"
     s = serial.Serial("%s" % gps_serial, baudrate=115200, timeout=3)
+    s.write(b"AT+CGPS=1\r\n")
+    s.readlines()
     tries = 0
     max_tries = 20
     while tries < max_tries:
